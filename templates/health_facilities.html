@@ -1,0 +1,27 @@
+
+form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Maternal Profile</button>
+</form>
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Facilities</title>
+</head>
+<body>
+    <h2>Health Facilities</h2>
+    <ul>
+        {% for facility in facilities %}
+            <li>{{ facility.name }} (Code: {{ facility.code }})</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
