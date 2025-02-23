@@ -21,6 +21,5 @@ from django.urls import path , include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('MamaCare.urls'  )),
-    # path('maternal-profile/', maternal_profile_view, name='maternal_profile_form'),
-    # path('success/', success_page, name='success_page'),
+    
 ]

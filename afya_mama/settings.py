@@ -39,11 +39,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'MamaCare',
-    'hospital_auth',
+    
 ]
 
-AUTH_USER_MODEL = 'hospital_auth.HospitalUser'
+AUTH_USER_MODEL = 'MamaCare.HospitalUser'  
 
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
