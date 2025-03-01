@@ -1,6 +1,6 @@
 
 from django.db import models
-
+import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 class HospitalUserManager(BaseUserManager):
@@ -30,15 +30,23 @@ class HospitalUser(AbstractBaseUser, PermissionsMixin):
     code = models.CharField(max_length=20, unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
     address = models.TextField()
-    phone_number = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
     email = models.EmailField(unique=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
 
     USERNAME_FIELD = "email"  # Use email for authentication
-    REQUIRED_FIELDS = ["username", "hospital_name", "code", "role", "phone_number"]
+    REQUIRED_FIELDS = ["hospital_name", "code", "role", "phone_number"]
 
     objects = HospitalUserManager() 
+
+
+    def save(self, *args, **kwargs):
+        if not self.code:  # Auto-generate unique code if blank
+            self.code = str(uuid.uuid4())[:10]
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.email} - {self.role} at {self.hospital_name}"
