@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'MamaCare',
+    'Mothers',
     
 ]
 
@@ -63,7 +64,9 @@ ROOT_URLCONF = 'afya_mama.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        # 'DIRS': [BASE_DIR / 'templates'], 
+        'DIRS': [BASE_DIR / 'templates', BASE_DIR / 'Mothers' / 'templates'],
+
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

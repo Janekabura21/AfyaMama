@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Your Notifications</h2>
+
+<ul>
+    {% for notification in notifications %}
+        <li>{{ notification.message }} - <small>{{ notification.created_at }}</small></li>
+    {% empty %}
+        <li>No notifications</li>
+    {% endfor %}
+</ul>
+
+<a href="{% url 'maternal_profile' %}">Back</a>
+{% endblock %}
+<h1>helo</h1>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointments</title>
+</head>
+<body>
+    <h2>Booked Appointments</h2>
+    <table border="1">
+        <tr>
+            <th>Patient</th>
+            <th>Doctor</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Attended</th>
+            <th>Actions</th>
+        </tr>
+        {% for appointment in appointments %}
+        <tr>
+            <td>{{ appointment.patient.name }}</td>
+            <td>{{ appointment.doctor.hospital_name }}</td>
+            <td>{{ appointment.date }}</td>
+            <td>{{ appointment.status }}</td>
+            <td>{{ appointment.attended|yesno:"Yes,No" }}</td>
+            <td>
+                <a href="{% url 'update_appointment' appointment.id 'Accepted' %}">Accept</a> |
+                <a href="{% url 'update_appointment' appointment.id 'Rejected' %}">Reject</a> |
+                <a href="{% url 'update_appointment' appointment.id 'Cancelled' %}">Cancel</a> |
+                <a href="{% url 'mark_attendance' appointment.id %}">Mark Attended</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

@@ -1,16 +1,18 @@
 
 # Create your views here.
-from django.shortcuts import render, redirect
-from .forms import MaternalProfileForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.timezone import now
+
+from .forms import AppointmentForm, MaternalProfileForm
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegistrationForm, HospitalLoginForm
-from .models import Patient, Appointment
+from .models import Appointment, HospitalUser
 
 
 
-
+# from .models import Mother, Child, BirthRecord, VaccinationRecord
 
 
 def register_hospital(request):
@@ -46,15 +48,15 @@ def login_hospital(request):
 
 @login_required
 def hospital_dashboard(request):
-    hospital = request.user   # Assuming each hospital has a user account
-    total_patients = Patient.objects.filter(hospital=hospital).count()
-    upcoming_appointments = Appointment.objects.filter(hospital=hospital, status="Upcoming").count()
-
+    # hospital = request.user
+    hospital = get_object_or_404(HospitalUser, email=request.user.email)  # Get the logged-in hospital user
+    appointments = Appointment.objects.filter(hospital=hospital).order_by('-date')  # Get hospital appointments
+    
     context = {
-        "hospital": hospital,
-        "total_patients": total_patients,
-        "upcoming_appointments": upcoming_appointments,
+        'hospital': hospital,
+        'appointments': appointments,
     }
+    
     
     return render(request, "hospital_dashboard.html", context)
 
@@ -81,11 +83,68 @@ def success_page(request):
 def add_patient(request):
     return render(request, 'add_patient.html')
 
+@login_required
+def update_appointment(request, appointment_id):
+    appointment = Appointment.objects.get(id=appointment_id)
+    if request.method == "POST":
+        form = AppointmentForm(request.POST, instance=appointment)
+        if form.is_valid():
+            form.save()
+            return redirect("hospital_dashboard")
+    else:
+        form = AppointmentForm(instance=appointment)
+    return render(request, "update_appointment.html", {"form": form})
+
+@login_required
+def delete_appointment(request, appointment_id):
+    appointment = Appointment.objects.get(id=appointment_id)
+    if request.method == "POST":
+        appointment.delete()
+        return redirect("hospital_dashboard")
+    return render(request, "delete_appointment.html", {"appointment": appointment})
+
+
+
+
+def appointments_list(request):
+    appointments = Appointment.objects.all()
+    return render(request, 'appointments_list.html', {'appointments': appointments})
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+@login_required
+def appointment_list(request):
+    appointments = Appointment.objects.all()
+    return render(request, 'hospital/appointments.html', {'appointments': appointments})
+
+@login_required
+def update_appointment_status(request, appointment_id, status):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    appointment.status = status
+    appointment.save()
+    return redirect('appointment_list')
+
+@login_required
+def mark_attendance(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    appointment.attended = True
+    appointment.save()
+    return redirect('appointment_list')
 
 
 

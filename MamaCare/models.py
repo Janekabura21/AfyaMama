@@ -64,23 +64,7 @@ class Patient(models.Model):
     medical_history = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.name} - {self.hospital.name}"
-
-
-class Appointment(models.Model):
-    STATUS_CHOICES = [
-        ("Upcoming", "Upcoming"),
-        ("Completed", "Completed"),
-        ("Cancelled", "Cancelled"),
-    ]
-
-    hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE)
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-    date = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Upcoming")
-
-    def __str__(self):
-        return f"Appointment: {self.patient.name} on {self.date}"
+        return f"{self.name} - {self.hospital.hospital_name}"
 
 
 
@@ -123,3 +107,184 @@ class MaternalProfile(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.edd}"
+
+
+
+class Appointment(models.Model):
+    STATUS_CHOICES = [
+        ("Pending", "Pending"),
+        ("Accepted", "Accepted"),
+        ("Rejected", "Rejected"),
+        ("Cancelled", "Cancelled"),
+        ("Completed", "Completed"),
+    ]
+
+    hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE, related_name="appointments")
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
+    maternal_profile = models.ForeignKey(MaternalProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name="appointments")
+    doctor = models.ForeignKey(HospitalUser, on_delete=models.CASCADE, related_name="doctor_appointments", limit_choices_to={'role': 'Doctor'}, null=True, blank=True)
+    date = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
+    attended = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        doctor_name = self.doctor.hospital_name if self.doctor else "Unassigned"
+        return f"Appointment: {self.patient.name} with {doctor_name} on {self.date}"
+
+
+class Doctor(models.Model):
+    user = models.OneToOneField(HospitalUser, on_delete=models.CASCADE, related_name="doctor_profile")
+    specialization = models.CharField(max_length=255)
+    experience_years = models.IntegerField()
+    qualifications = models.TextField()
+    availability = models.CharField(
+        max_length=50,
+        choices=[
+            ("Full-time", "Full-time"),
+            ("Part-time", "Part-time"),
+            ("Consultant", "Consultant"),
+        ],
+        default="Full-time",
+    )
+
+    def __str__(self):
+        return f"Dr. {self.user.hospital_name} - {self.specialization}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# from django.db import models
+
+# class Mother(models.Model):
+#     name = models.CharField(max_length=255)
+#     date_of_birth = models.DateField()
+#     contact = models.CharField(max_length=20)
+#     registered_date = models.DateField(auto_now_add=True)
+
+#     def __str__(self):
+#         return self.name
+
+# class Child(models.Model):
+#     mother = models.ForeignKey(Mother, on_delete=models.CASCADE, related_name="children")
+#     name = models.CharField(max_length=255)
+#     date_of_birth = models.DateField()
+#     is_follow_up = models.BooleanField(default=True)  # If child is still under hospital care
+
+#     def __str__(self):
+#         return self.name
+
+# class Appointment(models.Model):
+#     hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE)
+#     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+#     mother = models.ForeignKey(Mother, on_delete=models.CASCADE, null=True, blank=True)
+
+#     date = models.DateField()
+#     status = models.CharField(max_length=20, choices=[('upcoming', 'Upcoming'), ('completed', 'Completed'), ('missed', 'Missed')])
+
+#     def __str__(self):
+#         return f"Appointment for {self.mother.name} on {self.date}"
+
+# class BirthRecord(models.Model):
+#     mother = models.ForeignKey(Mother, on_delete=models.CASCADE)
+#     child = models.OneToOneField(Child, on_delete=models.CASCADE)
+#     birth_date = models.DateField()
+#     delivery_type = models.CharField(max_length=50, choices=[('normal', 'Normal'), ('c-section', 'C-Section')])
+
+#     def __str__(self):
+#         return f"Birth of {self.child.name}"
+
+# class VaccinationRecord(models.Model):
+#     child = models.ForeignKey(Child, on_delete=models.CASCADE)
+#     vaccine_name = models.CharField(max_length=255)
+#     due_date = models.DateField()
+#     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')])
+
+#     def __str__(self):
+#         return f"{self.vaccine_name} for {self.child.name}"
