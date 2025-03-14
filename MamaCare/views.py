@@ -7,8 +7,8 @@ from .forms import AppointmentForm, MaternalProfileForm
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
-from .forms import UserRegistrationForm, HospitalLoginForm
-from .models import Appointment, HospitalUser
+from .forms import UserRegistrationForm, HospitalLoginForm, PreviousPregnancyForm
+from .models import Appointment, HospitalUser, MaternalProfile, Patient, PreviousPregnancy
 
 
 
@@ -65,17 +65,37 @@ def logout_hospital(request):
     return redirect('login_hospital')
 
 
+
+
+# def maternal_profile_view(request, mother_id=None):  # Accept mother_id
+#     if mother_id:
+#         mother = get_object_or_404(MaternalProfile, id=mother_id)  # Get the mother's profile
+#     else:
+#         mother = None  # Allow creating a new maternal profile
+
+#     if request.method == "POST":
+#         form = MaternalProfileForm(request.POST, instance=mother)  # If editing, use instance
+#         if form.is_valid():
+#             mother = form.save()
+#             messages.success(request, "Profile saved successfully!")
+#             return redirect('maternal_profile', mother_id=mother.id)  # Redirect to profile page
+#     else:
+#         form = MaternalProfileForm(instance=mother)
+
+#     return render(request, 'maternal_profile.html', {'form': form, 'mother': mother})
+
 def maternal_profile_view(request):
     if request.method == "POST":
         form = MaternalProfileForm(request.POST)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile saved successfully!")
-            return redirect('success_page')  # Redirect to the same form page
+            return redirect('success_page')  # Ensure 'success_page' exists
     else:
         form = MaternalProfileForm()
 
     return render(request, 'maternal_profile_form.html', {'form': form})
+
 
 def success_page(request):
     return render(request, 'success_page.html')
@@ -112,7 +132,17 @@ def appointments_list(request):
 
 
 
+def search_records(request):
+    query = request.GET.get('q', '')  # Get the search query from the request
+    mothers = MaternalProfile.objects.filter(name__icontains=query) if query else []
+    children = Patient.objects.filter(name__icontains=query) if query else []
 
+    context = {
+        'query': query,
+        'mothers': mothers,
+        'children': children,
+    }
+    return render(request, 'MamaCare/search_results.html', context)
 
 
 
@@ -147,5 +177,29 @@ def mark_attendance(request, appointment_id):
     return redirect('appointment_list')
 
 
+def previous_pregnancy_view(request, mother_id):
+    mother = get_object_or_404(MaternalProfile, id=mother_id)
+    pregnancies = PreviousPregnancy.objects.filter(mother=mother)
+
+    return render(request, "previous_pregnancy.html", {"mother": mother, "pregnancies": pregnancies})
 
 
+def previous_pregnancy_list(request):
+    pregnancies = PreviousPregnancy.objects.all()
+    return render(request, 'previous_pregnancy_list.html', {'pregnancies': pregnancies})
+
+def add_previous_pregnancy(request, mother_id):
+    mother = get_object_or_404(MaternalProfile, id=mother_id)
+    
+    if request.method == "POST":
+        form = PreviousPregnancyForm(request.POST)
+        if form.is_valid():
+            pregnancy = form.save(commit=False)
+            pregnancy.mother = mother
+            pregnancy.save()
+            return redirect('previous_pregnancy_list')  # Redirect to the pregnancy list page
+
+    else:
+        form = PreviousPregnancyForm()
+
+    return render(request, 'add_previous_pregnancy.html', {'form': form, 'mother': mother})

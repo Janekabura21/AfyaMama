@@ -1,9 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
 <h1>MATERNAL PROFILE</h1>
 
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Save Maternal Profile</button>
+    
+
 </form>
 
 {% if form.errors %}
@@ -19,3 +25,5 @@
     </div>
 {% endif %}
 
+{% endblock %}
+<H1>HELLO</H1>

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Search Results</h2>
+
+{% if query %}
+    <p>Results for: <strong>{{ query }}</strong></p>
+
+    <h3>Mothers</h3>
+    {% if mothers %}
+        <ul>
+            {% for mother in mothers %}
+                <li>
+                    <a href="{% url 'maternal_profile_view' mother.id %}">{{ mother.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No mothers found.</p>
+    {% endif %}
+
+    <h3>Children</h3>
+    {% if children %}
+        <ul>
+            {% for child in children %}
+                <li>
+                    <a href="{% url 'child_profile_view' child.id %}">{{ child.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No children found.</p>
+    {% endif %}
+{% else %}
+    <p>Enter a name to search.</p>
+{% endif %}
+
+{% endblock %}

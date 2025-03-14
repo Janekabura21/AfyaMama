@@ -1,0 +1,33 @@
+<!-- ✅ Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'hospital_dashboard' %}">AfyaMama</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'hospital_dashboard' %}">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'add_patient' %}">Add Patient</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'maternal_profile_form' %}">Maternal Profile</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'appointments_list' %}">Appointments</a>
+                </li>
+            </ul>
+
+            <!-- ✅ Search Bar -->
+            <form method="GET" action="{% url 'search_records' %}" class="d-flex me-3">
+                <input class="form-control me-2" type="text" name="q" placeholder="Search Mother or Child" required>
+                <button class="btn btn-light" type="submit">Search</button>
+            </form>
+
+            <a class="btn btn-danger text-white" href="{% url 'logout_hospital' %}">Logout</a>
+        </div>
+    </div>
+</nav>

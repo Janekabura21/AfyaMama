@@ -153,6 +153,22 @@ class Doctor(models.Model):
 
 
 
+class PreviousPregnancy(models.Model):
+    mother = models.ForeignKey(MaternalProfile, on_delete=models.CASCADE)
+    pregnancy_order = models.IntegerField()
+    year = models.IntegerField()
+    anc_visits = models.IntegerField()
+    place_of_birth = models.CharField(max_length=255)
+    gestation_weeks = models.IntegerField()
+    labour_duration = models.CharField(max_length=50)
+    mode_of_delivery = models.CharField(max_length=50)
+    birth_weight = models.IntegerField()
+    sex = models.CharField(max_length=10)
+    outcome = models.CharField(max_length=50)
+    puerperium = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"Pregnancy {self.pregnancy_order} - {self.mother.name}"
 
 
 

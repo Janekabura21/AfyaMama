@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previous Pregnancy History</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; text-align: center; }
+        table { width: 80%; margin: auto; border-collapse: collapse; background: white; }
+        th, td { padding: 10px; border: 1px solid black; }
+        th { background-color: green; color: white; }
+    </style>
+</head>
+<body>
+    <h2>Previous Pregnancy History of {{ mother.name }}</h2>
+    <table>
+        <tr>
+            <th>Pregnancy Order</th>
+            <th>Year</th>
+            <th>ANC Visits</th>
+            <th>Place of Birth</th>
+            <th>Gestation Weeks</th>
+            <th>Labour Duration</th>
+            <th>Mode of Delivery</th>
+            <th>Birth Weight</th>
+            <th>Sex</th>
+            <th>Outcome</th>
+            <th>Puerperium</th>
+        </tr>
+        {% for pregnancy in pregnancies %}
+        <tr>
+            <td>{{ pregnancy.pregnancy_order }}</td>
+            <td>{{ pregnancy.year }}</td>
+            <td>{{ pregnancy.anc_visits }}</td>
+            <td>{{ pregnancy.place_of_birth }}</td>
+            <td>{{ pregnancy.gestation_weeks }}</td>
+            <td>{{ pregnancy.labour_duration }}</td>
+            <td>{{ pregnancy.mode_of_delivery }}</td>
+            <td>{{ pregnancy.birth_weight }}</td>
+            <td>{{ pregnancy.sex }}</td>
+            <td>{{ pregnancy.outcome }}</td>
+            <td>{{ pregnancy.puerperium }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

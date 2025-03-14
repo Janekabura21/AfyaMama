@@ -1,3 +1,82 @@
+<!-- {% extends 'base.html' %}
+
+{% block title %}Hospital Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+         Overview Section -->
+        <!-- <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-lg p-4">
+                <h3 class="text-center">Overview Section</h3>
+                <p class="text-center">See Overview Section here.</p>
+                <div class="text-center">
+                    <a href="{% url 'appointments_list' %}" class="btn btn-light">View Appointments</a>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Appointments -->
+        <!-- <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-lg p-4">
+                <h3 class="text-center">Appointments</h3>
+                <p class="text-center">Manage all hospital appointments here.</p>
+                <div class="text-center">
+                    <a href="{% url 'appointments_list' %}" class="btn btn-light">View Appointments</a>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Mother and Child Records -->
+        <!-- <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-lg p-4">
+                <h3 class="text-center">Mother and Child Records</h3>
+                <p class="text-center">Manage all Records here.</p>
+                <div class="text-center">
+                    <a href="{% url 'maternal_profile_form' %}" class="btn btn-light">View Records</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} --> -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,16 +87,16 @@
         /* Kenyan-Themed Dashboard Styling */
         .dashboard-container {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            justify-content: center; /* Centers content horizontally */
+            gap: 20px; /* Adds space between boxes */
+            padding: 20px; /* Adds some padding */
             background-color: #f4f4f4;
         }
 
         .dashboard-box {
             width: 300px;
             padding: 20px;
-            background-color: black;
+            background-color: rgb(114, 71, 85);
             color: white;
             text-align: center;
             border-radius: 10px;
@@ -31,7 +110,7 @@
         .dashboard-btn {
             display: inline-block;
             padding: 10px 20px;
-            background-color: green;
+            background-color: rgb(73, 42, 51);
             color: white;
             text-decoration: none;
             font-size: 16px;
@@ -41,19 +120,32 @@
         }
 
         .dashboard-btn:hover {
-            background-color: red;
+            background-color: rgb(58, 28, 28);
         }
     </style>
 </head>
 <body>
 
-<div class="dashboard-container">
-    <div class="dashboard-box">
-        <h2>Appointments</h2>
-        <p>Manage all hospital appointments here.</p>
-        <a href="{% url 'appointments_list' %}" class="dashboard-btn">View Appointments</a>
+    <div class="dashboard-container">
+        <div class="dashboard-box">
+            <h2>Overview Section</h2>
+            <p>See Overview Section here.</p>
+            <a href="{% url 'appointments_list' %}" class="dashboard-btn">View Appointments</a>
+        </div>
+
+        <div class="dashboard-box">
+            <h2>Appointments</h2>
+            <p>Manage all hospital appointments here.</p>
+            <a href="{% url 'appointments_list' %}" class="dashboard-btn">View Appointments</a>
+        </div>
+    
+        <div class="dashboard-box">
+            <h2>Mother and Child Records</h2>
+            <p>Manage all Records here.</p>
+            <a href="{% url 'maternal_profile_form' %}" class="dashboard-btn">View Records</a>
+        </div>
     </div>
-</div>
+    
 
 </body>
 </html>
