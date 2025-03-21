@@ -1,12 +1,12 @@
-<!-- {% extends 'base.html' %}
+ {% extends 'base.html' %}
 
 {% block title %}Hospital Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row">
-         Overview Section -->
-        <!-- <div class="col-md-4">
+        
+        <div class="col-md-4">
             <div class="card bg-dark text-white shadow-lg p-4">
                 <h3 class="text-center">Overview Section</h3>
                 <p class="text-center">See Overview Section here.</p>
@@ -14,10 +14,10 @@
                     <a href="{% url 'appointments_list' %}" class="btn btn-light">View Appointments</a>
                 </div>
             </div>
-        </div> -->
+        </div> 
 
-        <!-- Appointments -->
-        <!-- <div class="col-md-4">
+        <!-- Appointments  -->
+        <div class="col-md-4">
             <div class="card bg-dark text-white shadow-lg p-4">
                 <h3 class="text-center">Appointments</h3>
                 <p class="text-center">Manage all hospital appointments here.</p>
@@ -25,21 +25,32 @@
                     <a href="{% url 'appointments_list' %}" class="btn btn-light">View Appointments</a>
                 </div>
             </div>
-        </div> -->
+        </div>
 
-        <!-- Mother and Child Records -->
-        <!-- <div class="col-md-4">
+        <!-- Mother and Child Records --> 
+        <div class="col-md-4">
             <div class="card bg-dark text-white shadow-lg p-4">
                 <h3 class="text-center">Mother and Child Records</h3>
                 <p class="text-center">Manage all Records here.</p>
                 <div class="text-center">
-                    <a href="{% url 'maternal_profile_form' %}" class="btn btn-light">View Records</a>
+                    <a href="{% url 'mother_child_records' %}" class="btn btn-light">View Records</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Mother and Child Records -->
+        <div class="col-md-4">
+            <div class="card bg-dark text-white shadow-lg p-4">
+                <h3 class="text-center">Add Mother and Child Records</h3>
+                <p class="text-center">Add all Records here.</p>
+                <div class="text-center">
+                    <a href="{% url 'add_records' %}" class="btn btn-light">Add Records</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} --> -->
+{% endblock %} 
 
 
 

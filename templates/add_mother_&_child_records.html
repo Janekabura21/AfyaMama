@@ -1,4 +1,93 @@
-<!DOCTYPE html>
+{% extends "base.html" %}
+{% block content %}
+<div style="background-color: white; padding: 20px; border-radius: 10px;">
+    <h2>Add Mother and Child Records</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <h3>Mother Information</h3>
+        {{ mother_form.as_p }}
+        
+        <h3>Child Information</h3>
+        {{ child_form.as_p }}
+        
+        <h3>Health Record</h3>
+        {{ health_record_form.as_p }}
+        
+        <button type="submit" style="padding: 10px 20px; background-color: green; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            Save Records
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -53,4 +142,4 @@
         {% endif %}
     </div>
 </body>
-</html>
+</html> -->

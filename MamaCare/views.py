@@ -1,14 +1,15 @@
 
 # Create your views here.
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.timezone import now
 
-from .forms import AppointmentForm, MaternalProfileForm
+from .forms import AppointmentForm, ChildForm, HealthRecordForm, MaternalProfileForm, MotherForm
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegistrationForm, HospitalLoginForm, PreviousPregnancyForm
-from .models import Appointment, HospitalUser, MaternalProfile, Patient, PreviousPregnancy
+from .models import Appointment, Child, HospitalUser, MaternalProfile, Mother, Patient, PreviousPregnancy
 
 
 
@@ -133,24 +134,90 @@ def appointments_list(request):
 
 
 def search_records(request):
-    query = request.GET.get('q', '')  # Get the search query from the request
-    mothers = MaternalProfile.objects.filter(name__icontains=query) if query else []
-    children = Patient.objects.filter(name__icontains=query) if query else []
+    
+    
+    query = request.GET.get('q')  # Get the search query from the form
+    mothers = Mother.objects.filter(name__icontains=query) if query else None
+    children = Child.objects.filter(name__icontains=query) if query else None
 
     context = {
         'query': query,
         'mothers': mothers,
         'children': children,
     }
-    return render(request, 'MamaCare/search_results.html', context)
+    return render(request, 'search_results.html', context)
 
 
 
+def mother_child_records(request):
+    sections = [
+        {"title": "ANC, Childbirth and Postnatal Care", "url": "anc_childbirth"},
+        {"title": "Maternal Profile", "url": "maternal_profile"},
+        {"title": "Medical & Surgical History", "url": "medical_history"},
+        {"title": "Previous Pregnancy", "url": "previous_pregnancy"},
+        {"title": "Physical Examination [1st Visit]", "url": "physical_exam"},
+        {"title": "Child Health Monitoring", "url": "child_health_monitoring"},
+        {"title": "Health Record of Child", "url": "health_record"},
+        {"title": "Immunization", "url": "immunization"},
+        {"title": "Family Planning", "url": "family_planning"},
+        {"title": "Hospital Admissions", "url": "hospital_admissions"},
+    ]
+    return render(request, "view_records.html", {"sections": sections})
+
+
+def mother_detail(request, mother_id):
+    mother = Mother.objects.get(id=mother_id)
+    return render(request, 'mother_detail.html', {'mother': mother})
+
+def child_detail(request, child_id):
+    child = Child.objects.get(id=child_id)
+    return render(request, 'child_detail.html', {'child': child})
+
+
+def add_records(request):
+    mother_form = MotherForm()
+    child_form = ChildForm()
+    health_record_form = HealthRecordForm()
+
+    if request.method == "POST":
+        mother_form = MotherForm(request.POST)
+        child_form = ChildForm(request.POST)
+        health_record_form = HealthRecordForm(request.POST)
+
+        if mother_form.is_valid():
+            mother_form.save()
+        if child_form.is_valid():
+            child_form.save()
+        if health_record_form.is_valid():
+            health_record_form.save()
+
+    return render(request, "add_mother_&_child_records.html", {
+        "mother_form": mother_form,
+        "child_form": child_form,
+        "health_record_form": health_record_form
+    })
 
 
 
+# def add_mother(request):
+#     if request.method == "POST":
+#         form = MotherForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('mother_list')  # Redirect to mother list after saving
+#     else:
+#         form = MotherForm()
+#     return render(request, 'add_mother.html', {'form': form})
 
-
+# def add_child(request):
+#     if request.method == "POST":
+#         form = ChildForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect('child_list')  # Redirect to child list after saving
+#     else:
+#         form = ChildForm()
+#     return render(request, 'add_child.html', {'form': form})
 
 
 

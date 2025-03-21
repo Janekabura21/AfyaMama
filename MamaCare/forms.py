@@ -1,5 +1,5 @@
 from django import forms
-from .models import MaternalProfile, HospitalUser, Patient, Appointment, PreviousPregnancy
+from .models import Child, HealthRecord, MaternalProfile, HospitalUser, Mother, Patient, Appointment, PreviousPregnancy
 from .models import PreviousPregnancy
 
 
@@ -149,7 +149,20 @@ class PreviousPregnancyForm(forms.ModelForm):
 
 
 
+class MotherForm(forms.ModelForm):
+    class Meta:
+        model = Mother
+        fields = ['name', 'date_of_birth', 'medical_history']
 
+class ChildForm(forms.ModelForm):
+    class Meta:
+        model = Child
+        fields = ['name', 'date_of_birth', 'mother', 'health_record']
+
+class HealthRecordForm(forms.ModelForm):
+    class Meta:
+        model = HealthRecord
+        fields = '__all__'
 
 
 

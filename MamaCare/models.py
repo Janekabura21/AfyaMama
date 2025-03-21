@@ -172,12 +172,57 @@ class PreviousPregnancy(models.Model):
 
 
 
+class Mother(models.Model):
+    name = models.CharField(max_length=255)
+    national_id = models.CharField(max_length=20, unique=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    medical_history = models.TextField(blank=True)
 
+    def __str__(self):
+        return self.name
+    
 
+class Child(models.Model):
+    
+    mother = models.ForeignKey(Mother, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=255)
+    date_of_birth = models.DateField()
+    health_record = models.TextField(blank=True, null=True)
 
+    def __str__(self):
+        return f"{self.name} (Child of {self.mother.name})"
 
 
+class HealthRecord(models.Model):
+    mother = models.ForeignKey(Mother, on_delete=models.CASCADE, related_name="health_records", null=True, blank=True)
+    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name="health_records", null=True, blank=True)
+    section = models.CharField(max_length=255, choices=[
+        ("ANC, Childbirth and Postnatal Care", "ANC, Childbirth and Postnatal Care"),
+        ("Maternal Profile", "Maternal Profile"),
+        ("Medical & Surgical History", "Medical & Surgical History"),
+        ("Previous Pregnancy", "Previous Pregnancy"),
+        ("Antenatal Profile", "Antenatal Profile"),
+        ("Weight Monitoring Chart", "Weight Monitoring Chart"),
+        ("Clinical Notes", "Clinical Notes"),
+        ("Malaria Prophylaxis", "Malaria Prophylaxis"),
+        ("Maternal Serology Testing", "Maternal Serology Testing"),
+        ("Infant Feeding", "Infant Feeding"),
+        ("Danger Signs During Pregnancy", "Danger Signs During Pregnancy"),
+        ("Positioning for Breastfeeding", "Positioning for Breastfeeding"),
+        ("Child Health Monitoring", "Child Health Monitoring"),
+        ("Developmental Milestones", "Developmental Milestones"),
+        ("Growth Monitoring", "Growth Monitoring"),
+        ("Immunization", "Immunization"),
+        ("Vitamin A Supplementation", "Vitamin A Supplementation"),
+        ("Deworming", "Deworming"),
+        ("PMTCT of HIV/Syphilis/Hepatitis B", "PMTCT of HIV/Syphilis/Hepatitis B"),
+        ("Recommendations for Child Care", "Recommendations for Child Care"),
+    ])
+    details = models.TextField(blank=True)
 
+    def __str__(self):
+        return f"{self.section} - {self.mother if self.mother else self.child}"
 
 
 
@@ -256,51 +301,5 @@ class PreviousPregnancy(models.Model):
 
 
 
-# from django.db import models
 
-# class Mother(models.Model):
-#     name = models.CharField(max_length=255)
-#     date_of_birth = models.DateField()
-#     contact = models.CharField(max_length=20)
-#     registered_date = models.DateField(auto_now_add=True)
 
-#     def __str__(self):
-#         return self.name
-
-# class Child(models.Model):
-#     mother = models.ForeignKey(Mother, on_delete=models.CASCADE, related_name="children")
-#     name = models.CharField(max_length=255)
-#     date_of_birth = models.DateField()
-#     is_follow_up = models.BooleanField(default=True)  # If child is still under hospital care
-
-#     def __str__(self):
-#         return self.name
-
-# class Appointment(models.Model):
-#     hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE)
-#     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
-#     mother = models.ForeignKey(Mother, on_delete=models.CASCADE, null=True, blank=True)
-
-#     date = models.DateField()
-#     status = models.CharField(max_length=20, choices=[('upcoming', 'Upcoming'), ('completed', 'Completed'), ('missed', 'Missed')])
-
-#     def __str__(self):
-#         return f"Appointment for {self.mother.name} on {self.date}"
-
-# class BirthRecord(models.Model):
-#     mother = models.ForeignKey(Mother, on_delete=models.CASCADE)
-#     child = models.OneToOneField(Child, on_delete=models.CASCADE)
-#     birth_date = models.DateField()
-#     delivery_type = models.CharField(max_length=50, choices=[('normal', 'Normal'), ('c-section', 'C-Section')])
-
-#     def __str__(self):
-#         return f"Birth of {self.child.name}"
-
-# class VaccinationRecord(models.Model):
-#     child = models.ForeignKey(Child, on_delete=models.CASCADE)
-#     vaccine_name = models.CharField(max_length=255)
-#     due_date = models.DateField()
-#     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('completed', 'Completed')])
-
-#     def __str__(self):
-#         return f"{self.vaccine_name} for {self.child.name}"

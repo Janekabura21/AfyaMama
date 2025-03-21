@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Child: {{ child.name }}</h2>
+<p>Date of Birth: {{ child.date_of_birth }}</p>
+<p>Mother: <a href="{% url 'mother_detail' child.mother.id %}">{{ child.mother.name }}</a></p>
+<p>Health Record: {{ child.health_record }}</p>
+{% endblock %}

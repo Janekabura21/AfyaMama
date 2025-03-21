@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Mother and Child Records</h2>
+                    <li>
+                        <form method="GET" action="{% url 'search_records' %}" class="d-flex me-3">
+                            <input class="form-control me-2" type="text" name="q" placeholder="Search Mother or Child" required>
+                            <button class="btn btn-light" type="submit">Search</button>
+                        </form>
+                    </li>
+<ul class="list-group">
+    {% for section in sections %}
+        <li class="list-group-item">
+            <a href="{% url 'mother_child_records' %}">{{ section.title }}</a>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

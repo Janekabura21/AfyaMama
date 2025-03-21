@@ -1,38 +1,38 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Search Results</h2>
+<h2>Search for Mother or Child</h2>
+
+<!-- Search Form -->
+<form method="GET" action="{% url 'search_records' %}">
+    <input type="text" name="q" placeholder="Enter mother or child name" required>
+    <button type="submit">Search</button>
+</form>
 
 {% if query %}
-    <p>Results for: <strong>{{ query }}</strong></p>
+    <h3>Results for "{{ query }}"</h3>
 
-    <h3>Mothers</h3>
     {% if mothers %}
+        <h4>Mothers:</h4>
         <ul>
             {% for mother in mothers %}
-                <li>
-                    <a href="{% url 'maternal_profile_view' mother.id %}">{{ mother.name }}</a>
-                </li>
+                <li><a href="{% url 'mother_detail' mother.id %}">{{ mother.name }}</a></li>
             {% endfor %}
         </ul>
-    {% else %}
-        <p>No mothers found.</p>
     {% endif %}
 
-    <h3>Children</h3>
     {% if children %}
+        <h4>Children:</h4>
         <ul>
             {% for child in children %}
-                <li>
-                    <a href="{% url 'child_profile_view' child.id %}">{{ child.name }}</a>
-                </li>
+                <li><a href="{% url 'child_detail' child.id %}">{{ child.name }}</a></li>
             {% endfor %}
         </ul>
-    {% else %}
-        <p>No children found.</p>
     {% endif %}
-{% else %}
-    <p>Enter a name to search.</p>
+
+    {% if not mothers and not children %}
+        <p>No results found.</p>
+    {% endif %}
 {% endif %}
 
 {% endblock %}
