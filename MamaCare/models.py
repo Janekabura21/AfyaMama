@@ -66,7 +66,8 @@ class Patient(models.Model):
     def __str__(self):
         return f"{self.name} - {self.hospital.hospital_name}"
 
-
+def generate_temp_id():
+    return "TMP-" + str(uuid.uuid4())[:8]
 
 class MaternalProfile(models.Model):
     name = models.CharField(max_length=100)
@@ -86,7 +87,8 @@ class MaternalProfile(models.Model):
     town_village = models.CharField(max_length=100, null=True, blank=True)
     physical_address = models.CharField(max_length=100, null=True, blank=True)
     telephone = models.CharField(max_length=15)
-    id_number = models.CharField(max_length=20, null=True, blank=True)
+    identification_number = models.CharField(max_length=20, null=True, blank=True)
+    guardian_id = models.CharField(max_length=20, blank=True, null=True)
     huduma_number = models.CharField(max_length=20, null=True, blank=True)
     education_level = models.CharField(max_length=50, null=True, blank=True)
     
@@ -104,6 +106,12 @@ class MaternalProfile(models.Model):
     other_allergies = models.TextField(null=True, blank=True)
     family_history_twins = models.BooleanField(default=False)
     family_history_tb = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        # If no ID is provided, generate a temporary one
+        if not self.identification_number:
+            self.identification_number = generate_temp_id()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} - {self.edd}"
@@ -169,29 +177,35 @@ class PreviousPregnancy(models.Model):
 
     def __str__(self):
         return f"Pregnancy {self.pregnancy_order} - {self.mother.name}"
-
+    
 
 
 class Mother(models.Model):
     name = models.CharField(max_length=255)
-    national_id = models.CharField(max_length=20, unique=True)
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
-    date_of_birth = models.DateField(null=True, blank=True)
-    medical_history = models.TextField(blank=True)
+    identification_number = models.CharField(max_length=20, unique=True)    
+    medical_history = models.TextField()
 
     def __str__(self):
         return self.name
-    
 
 class Child(models.Model):
-    
-    mother = models.ForeignKey(Mother, on_delete=models.SET_NULL, null=True, blank=True)
+    mother = models.ForeignKey(Mother, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     date_of_birth = models.DateField()
-    health_record = models.TextField(blank=True, null=True)
+
+    health_record = models.ForeignKey(
+        'HealthRecord',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="child_health_record")
 
     def __str__(self):
-        return f"{self.name} (Child of {self.mother.name})"
+        
+        return self.name
+
+
+
 
 
 class HealthRecord(models.Model):
@@ -226,6 +240,13 @@ class HealthRecord(models.Model):
 
 
 
+class MotherChildRecord(models.Model):
+    category = models.CharField(max_length=255)
+    details = models.TextField()
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.category
 
 
 
@@ -236,6 +257,44 @@ class HealthRecord(models.Model):
 
 
 
+class PhysicalExamination(models.Model):
+    # General Examination
+    blood_pressure = models.CharField(max_length=10, help_text="e.g., 118/65 mmHg")
+    pulse_rate = models.PositiveIntegerField(help_text="Beats per minute")
+    cvs = models.TextField(blank=True, null=True)  # Cardiovascular system
+    respiratory_system = models.TextField(blank=True, null=True)
+    breasts = models.TextField(blank=True, null=True)
+    abdomen = models.TextField(blank=True, null=True)
+    genital_examination = models.TextField(blank=True, null=True)
+    discharge_or_ulcer = models.BooleanField(default=False, help_text="Check if present")
+
+    # Antenatal Profile
+    hemoglobin = models.FloatField(help_text="g/dl")
+    blood_group = models.CharField(max_length=3, choices=[("A", "A"), ("B", "B"), ("AB", "AB"), ("O", "O")])
+    rhesus_factor = models.CharField(max_length=5, choices=[("TR+", "TR+"), ("TR-", "TR-")])
+    urinalysis = models.CharField(max_length=50, blank=True, null=True)
+    blood_rbs = models.FloatField(blank=True, null=True, help_text="Random blood sugar")
+
+    # TB Screening
+    tb_screening_outcome = models.BooleanField(default=False, help_text="True = Positive, False = Negative")
+    ipt_given_date = models.DateField(blank=True, null=True)
+    ipt_next_visit = models.DateField(blank=True, null=True)
+
+    # Obstetric Ultrasound
+    scan_first_date = models.DateField(blank=True, null=True, help_text="Before 24 weeks")
+    scan_second_date = models.DateField(blank=True, null=True, help_text="Third trimester")
+
+    # Triple Testing (HIV, Syphilis, Hep B)
+    hiv_status = models.CharField(max_length=20, choices=[("Reactive", "Reactive"), ("Non-Reactive", "Non-Reactive"), ("Not Tested", "Not Tested")], default="Not Tested")
+    syphilis_status = models.CharField(max_length=20, choices=[("Reactive", "Reactive"), ("Non-Reactive", "Non-Reactive"), ("Not Tested", "Not Tested")], default="Not Tested")
+    hepatitis_b_status = models.CharField(max_length=20, choices=[("Reactive", "Reactive"), ("Non-Reactive", "Non-Reactive"), ("Not Tested", "Not Tested")], default="Not Tested")
+
+    # Partner HIV Testing
+    couple_testing_done = models.BooleanField(default=False)
+    partner_hiv_status = models.CharField(max_length=20, choices=[("Reactive", "Reactive"), ("Non-Reactive", "Non-Reactive"), ("Not Tested", "Not Tested")], default="Not Tested")
+
+    def __str__(self):
+        return f"Physical Examination - BP: {self.blood_pressure}, Pulse: {self.pulse_rate}"
 
 
 
@@ -244,11 +303,79 @@ class HealthRecord(models.Model):
 
 
 
+class PregnancyRecord(models.Model):
+    contact_number = models.PositiveIntegerField()
+    date = models.DateField()
+    urine = models.CharField(max_length=10, blank=True, null=True)
+    muac = models.PositiveIntegerField(help_text="Mid Upper Arm Circumference (cm)")
+    blood_pressure = models.CharField(max_length=10, help_text="e.g., 118/65 mmHg")
+    hb = models.FloatField(help_text="Hemoglobin level (g/dl)")
+    pallor = models.CharField(max_length=20, blank=True, null=True)
+    gestation_weeks = models.PositiveIntegerField()
+    fundal_height = models.CharField(max_length=10, blank=True, null=True)
+    presentation = models.CharField(max_length=10, blank=True, null=True)
+    lie = models.CharField(max_length=10, blank=True, null=True)
+    fetal_heart_rate = models.PositiveIntegerField(help_text="Beats per minute")
+    fetal_movement = models.BooleanField(default=True)
+    mental_health_status = models.CharField(max_length=100, blank=True, null=True)
+    next_visit = models.DateField()
+
+    def __str__(self):
+        return f"Pregnancy Record - {self.date} ({self.gestation_weeks} weeks)"
 
 
 
 
 
+
+
+from django.db import models
+
+class ChildProfile(models.Model):
+    # A. Particulars of the Child
+    name = models.CharField(max_length=100)
+    sex = models.CharField(max_length=10, choices=[("Male", "Male"), ("Female", "Female")])
+    date_of_birth = models.DateField()
+    gestation_at_birth = models.PositiveIntegerField(null=True, blank=True)  # Weeks
+    birth_weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # in grams
+    birth_length = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # in cm
+    birth_order = models.PositiveIntegerField(null=True, blank=True)
+    date_first_seen = models.DateField()
+
+    # B. Health Record of Child
+    place_of_birth = models.CharField(max_length=20, choices=[("Home", "Home"), ("Hospital", "Hospital"), ("Other", "Other")])
+    health_facility_name = models.CharField(max_length=100, null=True, blank=True)
+    birth_notification_no = models.CharField(max_length=20, null=True, blank=True)
+    immunization_registration_no = models.CharField(max_length=20, null=True, blank=True)
+    child_welfare_clinic_no = models.CharField(max_length=20, null=True, blank=True)
+    master_facility_code = models.CharField(max_length=20, null=True, blank=True)
+
+    # C. Civil Registration
+    birth_certificate_no = models.CharField(max_length=20, null=True, blank=True)
+    date_of_registration = models.DateField(null=True, blank=True)
+    place_of_registration = models.CharField(max_length=100, null=True, blank=True)
+
+    # D. Parent/Guardian Information
+    fathers_name = models.CharField(max_length=100, null=True, blank=True)
+    fathers_phone = models.CharField(max_length=20, null=True, blank=True)
+    mothers_name = models.CharField(max_length=100)
+    mothers_phone = models.CharField(max_length=20)
+    guardian_name = models.CharField(max_length=100, null=True, blank=True)
+    guardian_phone = models.CharField(max_length=20, null=True, blank=True)
+
+    # Address Details
+    residence = models.CharField(max_length=100)
+    county = models.CharField(max_length=100)
+    division = models.CharField(max_length=100, null=True, blank=True)
+    sub_county = models.CharField(max_length=100, null=True, blank=True)
+    town = models.CharField(max_length=100, null=True, blank=True)
+    estate_village = models.CharField(max_length=100, null=True, blank=True)
+    postal_address = models.CharField(max_length=100, null=True, blank=True)
+
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
 
 
 

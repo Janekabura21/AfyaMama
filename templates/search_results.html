@@ -1,38 +1,58 @@
-{% extends 'base.html' %}
+<div class="container mt-4">
+    <h2>Search Maternal Records</h2>
+    <input type="text" id="searchInput" class="form-control" placeholder="Search by Mother ID, Name, or Child Name">
+    
+    <ul id="searchResults" class="list-group mt-2"></ul>
+</div>
 
-{% block content %}
-<h2>Search for Mother or Child</h2>
+<script>
+    document.getElementById('searchInput').addEventListener('input', function() {
+        let query = this.value.trim();
+        if (query.length > 2) {  
+            fetch(`/search_maternal_records/?q=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    let resultsList = document.getElementById('searchResults');
+                    resultsList.innerHTML = "";
 
-<!-- Search Form -->
-<form method="GET" action="{% url 'search_records' %}">
-    <input type="text" name="q" placeholder="Enter mother or child name" required>
-    <button type="submit">Search</button>
-</form>
+                    if (data.length === 0) {
+                        resultsList.innerHTML = "<li class='list-group-item'>No records found</li>";
+                    }
 
-{% if query %}
-    <h3>Results for "{{ query }}"</h3>
+                    data.forEach(item => {
+                        let li = document.createElement('li');
+                        li.classList.add('list-group-item', 'list-group-item-action');
+                        li.textContent = `${item.mother_name} (ID: ${item.mother_id}) - Child: ${item.child_name}`;
+                        li.onclick = function() {
+                            window.location.href = item.profile_url;
+                        };
+                        resultsList.appendChild(li);
+                    });
+                });
+        }
+    });
+</script>
 
-    {% if mothers %}
-        <h4>Mothers:</h4>
+
+
+
+
+
+
+
+<!-- <div class="container">
+    <h2>Search Results</h2>
+
+    {% if mothers or children %}
         <ul>
             {% for mother in mothers %}
-                <li><a href="{% url 'mother_detail' mother.id %}">{{ mother.name }}</a></li>
+                <li><a href="{% url 'edit_record' mother.id %}">{{ mother.name }}</a></li>
             {% endfor %}
-        </ul>
-    {% endif %}
-
-    {% if children %}
-        <h4>Children:</h4>
-        <ul>
             {% for child in children %}
-                <li><a href="{% url 'child_detail' child.id %}">{{ child.name }}</a></li>
+                <li><a href="{% url 'edit_record' child.mother.id %}">{{ child.name }} (Child of {{ child.mother.name }})</a></li>
             {% endfor %}
         </ul>
+    {% else %}
+        <p>No records found.</p>
     {% endif %}
-
-    {% if not mothers and not children %}
-        <p>No results found.</p>
-    {% endif %}
-{% endif %}
-
-{% endblock %}
+</div> -->

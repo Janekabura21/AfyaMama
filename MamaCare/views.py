@@ -1,15 +1,16 @@
 
 # Create your views here.
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.timezone import now
 
-from .forms import AppointmentForm, ChildForm, HealthRecordForm, MaternalProfileForm, MotherForm
+from .forms import AppointmentForm, ChildForm, ChildProfileForm, HealthRecordForm, MaternalProfileForm, MotherForm, PhysicalExaminationForm, PregnancyRecordForm, RecordForm
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegistrationForm, HospitalLoginForm, PreviousPregnancyForm
-from .models import Appointment, Child, HospitalUser, MaternalProfile, Mother, Patient, PreviousPregnancy
+from .models import Appointment, Child, ChildProfile, HospitalUser, MaternalProfile, Mother, Patient, PreviousPregnancy
+from django.db.models import Q
 
 
 
@@ -68,34 +69,8 @@ def logout_hospital(request):
 
 
 
-# def maternal_profile_view(request, mother_id=None):  # Accept mother_id
-#     if mother_id:
-#         mother = get_object_or_404(MaternalProfile, id=mother_id)  # Get the mother's profile
-#     else:
-#         mother = None  # Allow creating a new maternal profile
 
-#     if request.method == "POST":
-#         form = MaternalProfileForm(request.POST, instance=mother)  # If editing, use instance
-#         if form.is_valid():
-#             mother = form.save()
-#             messages.success(request, "Profile saved successfully!")
-#             return redirect('maternal_profile', mother_id=mother.id)  # Redirect to profile page
-#     else:
-#         form = MaternalProfileForm(instance=mother)
 
-#     return render(request, 'maternal_profile.html', {'form': form, 'mother': mother})
-
-def maternal_profile_view(request):
-    if request.method == "POST":
-        form = MaternalProfileForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Profile saved successfully!")
-            return redirect('success_page')  # Ensure 'success_page' exists
-    else:
-        form = MaternalProfileForm()
-
-    return render(request, 'maternal_profile_form.html', {'form': form})
 
 
 def success_page(request):
@@ -133,20 +108,115 @@ def appointments_list(request):
 
 
 
+
+
+
+def add_new_record(request):
+    if request.method == 'POST':
+        form = RecordForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('dashboard')  # Redirect to the dashboard after saving
+    else:
+        form = RecordForm()
+
+    sections = [
+        # {"title": "ANC, Childbirth and Postnatal Care", "url": "anc_childbirth"},
+        {"title": "Maternal Profile", "url": "maternal_profile_form"},
+        {"title": "Child Profile", "url": "child_profile_form"},
+        # {"title": "Medical & Surgical History", "url": "medical_history"},
+        # {"title": "Previous Pregnancy", "url": "previous_pregnancy"},
+        # {"title": "Physical Examination [1st Visit]", "url": "physical_exam"},
+        # {"title": "Child Health Monitoring", "url": "child_health_monitoring"},
+        # {"title": "Health Record of Child", "url": "health_record"},
+        # {"title": "Immunization", "url": "immunization"},
+        # {"title": "Family Planning", "url": "family_planning"},
+        # {"title": "Hospital Admissions", "url": "hospital_admissions"},
+    ]
+
+    return render(request, 'add_new_record.html', {'form': form, 'sections': sections})
+
+
+
+
+def child_profile_form(request):
+    if request.method == "POST":
+        form = ChildProfileForm(request.POST)
+        if form.is_valid():
+        # Save form or process data as needed
+            form.save()
+            return render(request, "success_page.html", {"message": "Child Profile Saved Successfully"})
+    else:
+        form = ChildProfileForm()
+    return render(request, "child_profile_form.html", {"form": form})
+
+
+
+
+
+
+
+def add_record(request):
+    if request.method == "POST":
+        mother_form = MotherForm(request.POST)
+        child_form = ChildForm(request.POST)
+
+        if mother_form.is_valid() and child_form.is_valid():
+            mother = mother_form.save()
+            child = child_form.save(commit=False)
+            child.mother = mother
+            child.save()
+            return render(request, 'success.html', {'message': 'Record Added Successfully!'})
+
+    else:
+        mother_form = MotherForm()
+        child_form = ChildForm()
+
+    return render(request, 'add_mother_&_child_records.html', {'mother_form': mother_form, 'child_form': child_form})
+
 def search_records(request):
-    
-    
-    query = request.GET.get('q')  # Get the search query from the form
-    mothers = Mother.objects.filter(name__icontains=query) if query else None
-    children = Child.objects.filter(name__icontains=query) if query else None
+    query = request.GET.get('q', '').strip()
 
-    context = {
-        'query': query,
-        'mothers': mothers,
-        'children': children,
-    }
-    return render(request, 'search_results.html', context)
+    if query:
+        # Search in Mother ID, Mother Name, or Child Name
+        mothers = MaternalProfile.objects.filter(
+            Q(mother_id__icontains=query) | 
+            Q(mother_name__icontains=query) | 
+            Q(childprofile__child_name__icontains=query)  # Related Child Profile
+        ).distinct()
 
+        # Prepare JSON response
+        results = []
+        for mother in mothers:
+            child = ChildProfile.objects.filter(mother=mother).first()  # Get first child (if exists)
+            results.append({
+                "mother_id": mother.mother_id,
+                "mother_name": mother.mother_name,
+                "child_name": child.child_name if child else "No child record",
+                "profile_url": f"/maternal_profile/{mother.mother_id}/"  # Link to profile
+            })
+
+        return JsonResponse(results, safe=False)
+
+    return JsonResponse([], safe=False)
+    return render(request, 'search_results.html', {'mothers': mothers, 'children': children})
+
+
+
+def edit_record(request, mother_id):
+    mother = get_object_or_404(Mother, id=mother_id)
+    children = Child.objects.filter(mother=mother)
+
+    if request.method == "POST":
+        mother_form = MotherForm(request.POST, instance=mother)
+        if mother_form.is_valid():
+            mother_form.save()
+            return render(request, 'success.html', {'message': 'Record Updated Successfully!'})
+
+    else:
+        mother_form = MotherForm(instance=mother)
+
+        return render(request, 'edit_record.html', {'mother_form': mother_form, 'children': children})
 
 
 def mother_child_records(request):
@@ -199,25 +269,7 @@ def add_records(request):
 
 
 
-# def add_mother(request):
-#     if request.method == "POST":
-#         form = MotherForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return redirect('mother_list')  # Redirect to mother list after saving
-#     else:
-#         form = MotherForm()
-#     return render(request, 'add_mother.html', {'form': form})
 
-# def add_child(request):
-#     if request.method == "POST":
-#         form = ChildForm(request.POST)
-#         if form.is_valid():
-#             form.save()
-#             return redirect('child_list')  # Redirect to child list after saving
-#     else:
-#         form = ChildForm()
-#     return render(request, 'add_child.html', {'form': form})
 
 
 
@@ -270,3 +322,121 @@ def add_previous_pregnancy(request, mother_id):
         form = PreviousPregnancyForm()
 
     return render(request, 'add_previous_pregnancy.html', {'form': form, 'mother': mother})
+
+
+
+
+
+
+
+
+
+def anc_childbirth_view(request):
+    return render(request, 'anc_childbirth.html')
+
+def maternal_profile_view(request):
+    if request.method == "POST":
+        form = MaternalProfileForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile saved successfully!")
+            return redirect('success_page') 
+    else:
+        form = MaternalProfileForm()
+
+    return render(request, 'maternal_profile_form.html', {'form': form})
+
+
+def medical_history_view(request):
+    return render(request, 'medical_history.html')
+
+def previous_pregnancy_view(request):
+    return render(request, 'previous_pregnancy.html')
+
+def physical_exam_view(request):
+
+
+    if request.method == "POST":
+        form = PhysicalExaminationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('success_page')  # Redirect to a success page
+    else:
+        form = PhysicalExaminationForm()
+    
+    return render(request, 'physical_examination.html', {'form': form})
+
+    
+
+def child_health_monitoring_view(request):
+    return render(request, 'child_health_monitoring.html')
+
+def health_record_view(request):
+    return render(request, 'health_record.html')
+
+def immunization_view(request):
+    return render(request, 'immunization.html')
+
+def family_planning_view(request):
+    return render(request, 'family_planning.html')
+
+def hospital_admissions_view(request):
+    return render(request, 'hospital_admissions.html')
+
+
+def pregnancy_record_view(request):
+    if request.method == 'POST':
+        form = PregnancyRecordForm(request.POST)
+        if form.is_valid():
+            form.save()
+            if 'redirect' in request.POST:
+                return redirect('success_page')  # Replace with actual URL
+            else:
+                return redirect('pregnancy_record')  # Redirect back to form page
+
+    else:
+        form = PregnancyRecordForm()
+
+    return render(request, 'pregnancy_record.html', {'form': form})
+
+
+def update_existing_records(request):
+    mother_name = None
+    error_message = None  
+    form_submitted = False  
+
+    sections = [
+        {"title": "Maternal Profile", "url": "maternal_profile_form"},
+        {"title": "Child Profile", "url": "child_profile_form"},
+    ]
+
+    if request.method == "POST":  
+        form_submitted = True  
+
+        mother_id = request.POST.get("mother_id", "").strip()
+        mother_name_input = request.POST.get("mother_name", "").strip()
+
+        print(f"Searching for Mother ID: {mother_id}, Name: {mother_name_input}")  # Debug log
+
+        if mother_id or mother_name_input:  
+            try:
+                if mother_id:
+                        mother = MaternalProfile.objects.get(identification_number=mother_id)
+                else:
+                        mother = MaternalProfile.objects.get(name__icontains=mother_name_input)
+
+
+                mother_name = mother.name  # Assign found mother's name
+                print(f"Mother found: {mother_name}")  # Debug log
+            except MaternalProfile.DoesNotExist:
+                error_message = "Mother not found. Check the ID or name."
+                print("Error: Mother not found!")  # Debug log
+        else:
+            error_message = "Please enter a Mother ID or Name."
+
+    return render(request, "update_records.html", {
+        "mother_name": mother_name,
+        "sections": sections,
+        "error_message": error_message if form_submitted else None,
+        "form_submitted": form_submitted
+    })

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Child, HealthRecord, MaternalProfile, HospitalUser, Mother, Patient, Appointment, PreviousPregnancy
+from .models import Child, ChildProfile, HealthRecord, MaternalProfile, HospitalUser, Mother, MotherChildRecord, Patient, Appointment, PhysicalExamination, PregnancyRecord, PreviousPregnancy
 from .models import PreviousPregnancy
 
 
@@ -149,15 +149,6 @@ class PreviousPregnancyForm(forms.ModelForm):
 
 
 
-class MotherForm(forms.ModelForm):
-    class Meta:
-        model = Mother
-        fields = ['name', 'date_of_birth', 'medical_history']
-
-class ChildForm(forms.ModelForm):
-    class Meta:
-        model = Child
-        fields = ['name', 'date_of_birth', 'mother', 'health_record']
 
 class HealthRecordForm(forms.ModelForm):
     class Meta:
@@ -167,22 +158,57 @@ class HealthRecordForm(forms.ModelForm):
 
 
 
+class MotherForm(forms.ModelForm):
+    class Meta:
+        model = Mother
+        fields = ['name', 'identification_number', 'medical_history']
+
+class ChildForm(forms.ModelForm):
+    class Meta:
+        model = Child
+        fields = ['name', 'date_of_birth']
+
+class RecordForm(forms.ModelForm):
+    class Meta:
+        model = MotherChildRecord
+        fields = ['category', 'details']
+
+
+
+class PhysicalExaminationForm(forms.ModelForm):
+    class Meta:
+        model = PhysicalExamination
+        fields = '__all__'
+        widgets = {
+            'ipt_given_date': forms.DateInput(attrs={'type': 'date'}),
+            'ipt_next_visit': forms.DateInput(attrs={'type': 'date'}),
+            'scan_first_date': forms.DateInput(attrs={'type': 'date'}),
+            'scan_second_date': forms.DateInput(attrs={'type': 'date'}),
+        }
 
 
 
 
+class PregnancyRecordForm(forms.ModelForm):
+    class Meta:
+        model = PregnancyRecord
+        fields = '__all__'
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'next_visit': forms.DateInput(attrs={'type': 'date'}),
+        }
 
 
 
-
-
-
-
-
-
-
-
-
+class ChildProfileForm(forms.ModelForm):
+    class Meta:
+        model = ChildProfile
+        fields = "__all__"  # Includes all fields from the model
+        widgets = {
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+            'date_first_seen': forms.DateInput(attrs={'type': 'date'}),
+            'date_of_registration': forms.DateInput(attrs={'type': 'date'}),
+        }
 
 
 

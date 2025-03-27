@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .container {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        color: black;
+        text-align: center;
+        width: 50%;
+        margin: auto;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    label {
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    input {
+        width: 80%;
+        padding: 8px;
+        margin: 5px;
+        border: 1px solid gray;
+        border-radius: 5px;
+    }
+
+    button {
+        background: #28a745;
+        color: rgb(231, 223, 223);
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    button:hover {
+        background: #218838;
+    }
+
+    .error {
+        color: red;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="container">
+    <h2>Update Existing Records</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        <label for="mother_id">Identification Number (Mother ID) <small></small>:</label>
+        <input type="text" name="mother_id">
+        
+        <label for="mother_name">Mother's Name <small>(Optional)</small></label>
+        <input type="text" name="mother_name">
+
+        <label for="child_name">Child's Name (Optional):</label>
+        <input type="text" name="child_name">
+
+        <button type="submit">Search</button>
+    </form>
+
+    {% if form_submitted and error_message %}
+    <p class="error" style="color: red; font-weight: bold;">{{ error_message }}</p>
+    {% endif %}
+
+
+    {% if mother_name %}
+        <h3>Records for <strong>{{ mother_name }}</strong></h3>
+        <ul>
+            {% for section in sections %}
+                <li><a href="{% url section.url %}">{{ section.title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No records found. Please enter a valid Mother ID or Name.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

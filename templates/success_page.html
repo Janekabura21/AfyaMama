@@ -1,13 +1,68 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Success</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        .success-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #4CAF50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 15px;
+        }
+
+        .checkmark::after {
+            content: '✔';
+            font-size: 40px;
+            color: white;
+            font-weight: bold;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        p {
+            color: #555;
+        }
+    </style>
+    <script>
+        // Redirect to the dashboard after 10 seconds
+        setTimeout(function () {
+            window.location.href = "{% url 'hospital_dashboard' %}";
+        }, 10000);
+    </script>
 </head>
 <body>
-    <h2>Form Submitted Successfully!</h2>
-    <p>Your maternal profile has been recorded.</p>
-    <a href="{% url 'maternal_profile' %}">Go Back to Form</a>
+    <div class="success-container">
+        <div class="checkmark"></div>
+        <h2>Success!</h2>
+        <p>Your maternal profile has been recorded.</p>
+        <p>Redirecting to the dashboard in 10 seconds...</p>
+    </div>
 </body>
 </html>
