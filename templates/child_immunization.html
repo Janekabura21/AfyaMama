@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Immunization Record for {{ child.name }}</h2>
+    
+    {% for vaccine_type, records in immunizations_by_type.items %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>{{ records|first|default:vaccine_type|title }}</h3>
+        </div>
+        <div class="card-body">
+            {% if records %}
+                {% if vaccine_type in 'OPV,PENTA,PCV,ROTA,MR,VIT_A,DEWORM'|split %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Dose #</th>
+                                <th>Next Due</th>
+                                <th>Details</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td>{{ record.date_administered }}</td>
+                                <td>{{ record.dose_number }}</td>
+                                <td>{{ record.next_due_date|default:"-" }}</td>
+                                <td>
+                                    {% if vaccine_type == 'VIT_A' %}
+                                        {{ record.vitamin_a_dose }}
+                                    {% elif vaccine_type == 'DEWORM' %}
+                                        {{ record.deworming_dosage }}
+                                    {% else %}
+                                        {{ record.dose_amount|default:"" }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'immunization-edit' record.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>Date Given: {{ records.date_administered }}</p>
+                    <p>Next Visit: {{ records.next_due_date|default:"-" }}</p>
+                    {% if vaccine_type == 'BCG' %}
+                        <p>Dose: {{ records.dose_amount }}</p>
+                        <p>Scar Checked: {% if records.scar_checked %}Yes{% else %}No{% endif %}</p>
+                        {% if records.scar_checked %}
+                            <p>Scar Present: {% if records.scar_present %}Yes{% else %}No{% endif %}</p>
+                        {% endif %}
+                        {% if records.date_repeated %}
+                            <p>Date Repeated: {{ records.date_repeated }}</p>
+                        {% endif %}
+                    {% elif vaccine_type == 'VIT_A' %}
+                        <p>Dose: {{ records.vitamin_a_dose }}</p>
+                    {% elif vaccine_type == 'DEWORM' %}
+                        <p>Medication: {{ records.deworming_medication }}</p>
+                        <p>Dosage: {{ records.deworming_dosage }}</p>
+                    {% endif %}
+                    <a href="{% url 'immunization-edit' records.pk %}" class="btn btn-sm btn-primary">Edit</a>
+                {% endif %}
+            {% else %}
+                <p>No {{ vaccine_type }} vaccine recorded</p>
+            {% endif %}
+            <a href="{% url 'immunization-add' child.pk %}?vaccine_type={{ vaccine_type }}" class="btn btn-sm btn-success">Add {{ vaccine_type }}</a>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <!-- Adverse Events section remains the same -->
+</div>
+{% endblock %}

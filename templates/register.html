@@ -53,27 +53,8 @@
     <H1>Hospital Registration</H1>
 
 
-    <!-- <form method="POST">
-        {% csrf_token %}
     
-        {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label">{{ field.label }}</label>
-                {{ field }}
-                
-                Show errors only if the form has been submitted -->
-                 <!-- {% if form.is_bound and field.errors %} --> -->
-                     <!-- <div class="text-danger">
-                        {{ field.errors.as_text }}
-                    </div> -->
-                <!-- {% endif %} -->
-            <!-- </div> -->
-        <!-- {% endfor %} -->
-    
-        <!-- <button type="submit" class="btn btn-primary">Register</button>
-    </form> --> 
-
-    <form method="POST" action="{% url 'register' %}">
+    <form method="POST" action="{% url 'register_hospital' %}">
         {% csrf_token %}
         
         {% for field in form %}
@@ -105,9 +86,3 @@
 </body>
 </html>
 
-<!-- <h2>Register Hospital</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register</button>
-    </form>  --> 

@@ -1,7 +1,10 @@
 
+from datetime import date, datetime
 from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.forms import ValidationError
+import datetime
 
 class HospitalUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -69,11 +72,21 @@ class Patient(models.Model):
 def generate_temp_id():
     return "TMP-" + str(uuid.uuid4())[:8]
 
+from django.db import models
+from django.core.exceptions import ValidationError
+from datetime import date
+
 class MaternalProfile(models.Model):
+    # Remove mother_id completely and use identification_number as primary key
+    identification_number = models.CharField(
+        max_length=20,
+        primary_key=True,
+        verbose_name="Mother ID/National ID"
+    )
     name = models.CharField(max_length=100)
-    age = models.IntegerField()
+    date_of_birth = models.DateField(null=True, blank=True)
     gravida = models.IntegerField()  # Number of pregnancies
-    parity = models.IntegerField()   # Number of births
+    parity = models.IntegerField()  # Number of births
     height = models.FloatField(null=True, blank=True)
     weight = models.FloatField()
     lmp = models.DateField()  # Last Menstrual Period
@@ -87,7 +100,6 @@ class MaternalProfile(models.Model):
     town_village = models.CharField(max_length=100, null=True, blank=True)
     physical_address = models.CharField(max_length=100, null=True, blank=True)
     telephone = models.CharField(max_length=15)
-    identification_number = models.CharField(max_length=20, null=True, blank=True)
     guardian_id = models.CharField(max_length=20, blank=True, null=True)
     huduma_number = models.CharField(max_length=20, null=True, blank=True)
     education_level = models.CharField(max_length=50, null=True, blank=True)
@@ -96,7 +108,7 @@ class MaternalProfile(models.Model):
     next_of_kin_name = models.CharField(max_length=100)
     next_of_kin_relationship = models.CharField(max_length=50)
     next_of_kin_phone = models.CharField(max_length=15)
-
+    
     # Medical & Surgical History
     surgical_operation = models.BooleanField(default=False)
     diabetes = models.BooleanField(default=False)
@@ -107,15 +119,123 @@ class MaternalProfile(models.Model):
     family_history_twins = models.BooleanField(default=False)
     family_history_tb = models.BooleanField(default=False)
 
+    @property
+    def age(self):
+        """Calculate age safely handling None values"""
+        if not self.date_of_birth:
+            return None
+        today = date.today()
+        return (today - self.date_of_birth).days // 365
+    
+    def clean(self):
+        """Validate age requirements with safe age checking"""
+        age = self.age
+        
+        if age is not None:
+            if age >= 18 and not self.identification_number:
+                raise ValidationError("Adults must provide an ID number.")
+            if age < 18 and not self.guardian_id:
+                raise ValidationError("Minors must provide a guardian ID number.")
+                
+        # Additional validation for identification_number format if needed
+        if self.identification_number and len(self.identification_number) < 5:
+            raise ValidationError("ID number must be at least 5 characters")
+    
     def save(self, *args, **kwargs):
-        # If no ID is provided, generate a temporary one
-        if not self.identification_number:
-            self.identification_number = generate_temp_id()
+        self.clean()
         super().save(*args, **kwargs)
-
+    
     def __str__(self):
-        return f"{self.name} - {self.edd}"
+        return f"{self.name} (ID: {self.identification_number}) - EDD: {self.edd}"
+    
+    
+    
 
+
+class ChildProfile(models.Model):
+    # Replace default ID with mother's ID as primary key
+    id = models.CharField(
+        primary_key=True,
+        max_length=20,
+        verbose_name="Mother's ID Number",
+        help_text="Unique identification number of the mother"
+    )
+    mothers_profile = models.ForeignKey(
+        'MaternalProfile',
+        on_delete=models.CASCADE,
+        to_field='identification_number',
+        related_name='children'
+    )
+    
+    # Keep all your existing fields (unchanged)
+    name = models.CharField(max_length=100)
+    sex = models.CharField(max_length=10, choices=[("Male", "Male"), ("Female", "Female")])
+    date_of_birth = models.DateField(null=False, blank=False, default=datetime.date.today)
+    gestation_at_birth = models.PositiveIntegerField(null=True, blank=True)  # Weeks
+    birth_weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # in grams
+    birth_length = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # in cm
+    birth_order = models.PositiveIntegerField(null=True, blank=True)
+    date_first_seen = models.DateField(null=False, blank=False, default=datetime.date.today)
+    
+    # Health Record of Child
+    place_of_birth = models.CharField(max_length=20, choices=[("Home", "Home"), ("Hospital", "Hospital"), ("Other", "Other")])
+    health_facility_name = models.CharField(max_length=100, null=True, blank=True)
+    birth_notification_no = models.CharField(max_length=20, null=True, blank=True)
+    immunization_registration_no = models.CharField(max_length=20, null=True, blank=True)
+    child_welfare_clinic_no = models.CharField(max_length=20, null=True, blank=True)
+    master_facility_code = models.CharField(max_length=20, null=True, blank=True)
+    
+    # Civil Registration
+    birth_certificate_no = models.CharField(max_length=20, null=True, blank=True)
+    date_of_registration = models.DateField(null=True, blank=True)
+    place_of_registration = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Parent/Guardian Information
+    fathers_name = models.CharField(max_length=100, null=True, blank=True)
+    fathers_phone = models.CharField(max_length=20, null=True, blank=True)
+    mothers_phone = models.CharField(max_length=20)
+    # Remove mother_id_number since we're using it as primary key now
+    guardian_name = models.CharField(max_length=100, null=True, blank=True)
+    guardian_phone = models.CharField(max_length=20, null=True, blank=True)
+    
+    # Address Details
+    residence = models.CharField(max_length=100)
+    county = models.CharField(max_length=100)
+    division = models.CharField(max_length=100, null=True, blank=True)
+    sub_county = models.CharField(max_length=100, null=True, blank=True)
+    town = models.CharField(max_length=100, null=True, blank=True)
+    estate_village = models.CharField(max_length=100, null=True, blank=True)
+    postal_address = models.CharField(max_length=100, null=True, blank=True)
+    
+    date_created = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Child Profile"
+        verbose_name_plural = "Child Profiles"
+        ordering = ['date_of_birth']
+    
+    def clean(self):
+        """Validate that mother's ID is properly set"""
+        if not self.id:
+            # Get mother's ID from the profile if not set
+            if self.mothers_profile:
+                self.id = self.mothers_profile.identification_number
+            else:
+                raise ValidationError("Mother's identification number is required")
+        
+        # Ensure mother's ID matches the linked profile
+        if self.mothers_profile and self.id != self.mothers_profile.identification_number:
+            raise ValidationError({
+                'id': "Mother's ID must match the linked maternal profile ID"
+            })
+    
+    def save(self, *args, **kwargs):
+        """Automatically set mother's ID from profile if not provided"""
+        self.full_clean()  # Run validation
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.name} (Mother ID: {self.id})"
 
 
 class Appointment(models.Model):
@@ -162,7 +282,11 @@ class Doctor(models.Model):
 
 
 class PreviousPregnancy(models.Model):
-    mother = models.ForeignKey(MaternalProfile, on_delete=models.CASCADE)
+    mother = models.ForeignKey(
+        MaternalProfile,
+        on_delete=models.CASCADE, 
+        related_name="previous_pregnancies",
+        to_field='identification_number')
     pregnancy_order = models.IntegerField()
     year = models.IntegerField()
     anc_visits = models.IntegerField()
@@ -180,37 +304,16 @@ class PreviousPregnancy(models.Model):
     
 
 
-class Mother(models.Model):
-    name = models.CharField(max_length=255)
-    identification_number = models.CharField(max_length=20, unique=True)    
-    medical_history = models.TextField()
 
-    def __str__(self):
-        return self.name
 
-class Child(models.Model):
-    mother = models.ForeignKey(Mother, null=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    date_of_birth = models.DateField()
-
-    health_record = models.ForeignKey(
-        'HealthRecord',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="child_health_record")
-
-    def __str__(self):
-        
-        return self.name
 
 
 
 
 
 class HealthRecord(models.Model):
-    mother = models.ForeignKey(Mother, on_delete=models.CASCADE, related_name="health_records", null=True, blank=True)
-    child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name="health_records", null=True, blank=True)
+    mother = models.ForeignKey(MaternalProfile, on_delete=models.CASCADE, related_name="health_records", null=True, blank=True)
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name="health_records", null=True, blank=True)
     section = models.CharField(max_length=255, choices=[
         ("ANC, Childbirth and Postnatal Care", "ANC, Childbirth and Postnatal Care"),
         ("Maternal Profile", "Maternal Profile"),
@@ -303,25 +406,6 @@ class PhysicalExamination(models.Model):
 
 
 
-class PregnancyRecord(models.Model):
-    contact_number = models.PositiveIntegerField()
-    date = models.DateField()
-    urine = models.CharField(max_length=10, blank=True, null=True)
-    muac = models.PositiveIntegerField(help_text="Mid Upper Arm Circumference (cm)")
-    blood_pressure = models.CharField(max_length=10, help_text="e.g., 118/65 mmHg")
-    hb = models.FloatField(help_text="Hemoglobin level (g/dl)")
-    pallor = models.CharField(max_length=20, blank=True, null=True)
-    gestation_weeks = models.PositiveIntegerField()
-    fundal_height = models.CharField(max_length=10, blank=True, null=True)
-    presentation = models.CharField(max_length=10, blank=True, null=True)
-    lie = models.CharField(max_length=10, blank=True, null=True)
-    fetal_heart_rate = models.PositiveIntegerField(help_text="Beats per minute")
-    fetal_movement = models.BooleanField(default=True)
-    mental_health_status = models.CharField(max_length=100, blank=True, null=True)
-    next_visit = models.DateField()
-
-    def __str__(self):
-        return f"Pregnancy Record - {self.date} ({self.gestation_weeks} weeks)"
 
 
 
@@ -330,103 +414,252 @@ class PregnancyRecord(models.Model):
 
 
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from .models import ChildProfile  # Make sure this import works
 
-class ChildProfile(models.Model):
-    # A. Particulars of the Child
-    name = models.CharField(max_length=100)
-    sex = models.CharField(max_length=10, choices=[("Male", "Male"), ("Female", "Female")])
-    date_of_birth = models.DateField()
-    gestation_at_birth = models.PositiveIntegerField(null=True, blank=True)  # Weeks
-    birth_weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # in grams
-    birth_length = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # in cm
-    birth_order = models.PositiveIntegerField(null=True, blank=True)
-    date_first_seen = models.DateField()
+class Immunization(models.Model):
+    VACCINE_CHOICES = [
+        ('BCG', 'BCG'),
+        ('OPV', 'Oral Polio Vaccine (OPV)'),
+        ('IPV', 'Inactivated Polio Vaccine (IPV)'),
+        ('PENTA', 'Pentavalent (DPT-HepB-Hib)'),
+        ('PCV', 'Pneumococcal Conjugate Vaccine (PCV)'),
+        ('ROTA', 'Rotavirus Vaccine'),
+        ('MR', 'Measles-Rubella (MR)'),
+        ('YF', 'Yellow Fever'),
+        ('VIT_A', 'Vitamin A Supplementation'),
+        ('DEWORM', 'Deworming'),
+    ]
+    
+    child = models.ForeignKey(
+        ChildProfile, 
+        on_delete=models.CASCADE,
+        related_name='immunizations',
+        to_field='id'
+    )
+    vaccine_type = models.CharField(max_length=10, choices=VACCINE_CHOICES)
+    date_administered = models.DateField()
+    next_due_date = models.DateField(null=True, blank=True)
+    dose_number = models.PositiveSmallIntegerField(
+        null=True, 
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(3)]
+    )
+    dose_amount = models.CharField(max_length=50, null=True, blank=True)
+    batch_number = models.CharField(max_length=50, null=True, blank=True)
+    administered_by = models.CharField(max_length=100, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    
+    # BCG-specific fields
+    scar_checked = models.BooleanField(null=True, blank=True)
+    scar_present = models.BooleanField(null=True, blank=True)
+    date_repeated = models.DateField(null=True, blank=True)
+    
+    # Vitamin A specific
+    vitamin_a_dose = models.CharField(max_length=20, null=True, blank=True, choices=[
+        ('100000IU', '100,000 IU (6 months)'),
+        ('200000IU', '200,000 IU (12+ months)'),
+    ])
+    vitamin_a_age_given = models.CharField(max_length=50, null=True, blank=True)
+    
+    # Deworming specific
+    deworming_medication = models.CharField(max_length=50, null=True, blank=True, default='Albendazole')
+    deworming_dosage = models.CharField(max_length=50, null=True, blank=True, choices=[
+        ('200mg', '200mg (1-2 years)'),
+        ('400mg', '400mg (2+ years)'),
+    ])
+    deworming_age_given = models.CharField(max_length=50, null=True, blank=True)
+    
+    # MR Vaccine specific
+    mr_dose_age = models.CharField(max_length=20, null=True, blank=True, choices=[
+        ('6m', '6 months'),
+        ('9m', '9 months'),
+        ('18m', '18 months'),
+    ])
+    
+    # Yellow Fever specific
+    yf_eligible = models.BooleanField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['date_administered']
+        verbose_name = "Immunization Record"
+        verbose_name_plural = "Immunization Records"
 
-    # B. Health Record of Child
-    place_of_birth = models.CharField(max_length=20, choices=[("Home", "Home"), ("Hospital", "Hospital"), ("Other", "Other")])
-    health_facility_name = models.CharField(max_length=100, null=True, blank=True)
-    birth_notification_no = models.CharField(max_length=20, null=True, blank=True)
-    immunization_registration_no = models.CharField(max_length=20, null=True, blank=True)
-    child_welfare_clinic_no = models.CharField(max_length=20, null=True, blank=True)
-    master_facility_code = models.CharField(max_length=20, null=True, blank=True)
 
-    # C. Civil Registration
-    birth_certificate_no = models.CharField(max_length=20, null=True, blank=True)
-    date_of_registration = models.DateField(null=True, blank=True)
-    place_of_registration = models.CharField(max_length=100, null=True, blank=True)
-
-    # D. Parent/Guardian Information
-    fathers_name = models.CharField(max_length=100, null=True, blank=True)
-    fathers_phone = models.CharField(max_length=20, null=True, blank=True)
-    mothers_name = models.CharField(max_length=100)
-    mothers_phone = models.CharField(max_length=20)
-    guardian_name = models.CharField(max_length=100, null=True, blank=True)
-    guardian_phone = models.CharField(max_length=20, null=True, blank=True)
-
-    # Address Details
-    residence = models.CharField(max_length=100)
-    county = models.CharField(max_length=100)
-    division = models.CharField(max_length=100, null=True, blank=True)
-    sub_county = models.CharField(max_length=100, null=True, blank=True)
-    town = models.CharField(max_length=100, null=True, blank=True)
-    estate_village = models.CharField(max_length=100, null=True, blank=True)
-    postal_address = models.CharField(max_length=100, null=True, blank=True)
-
-    date_created = models.DateTimeField(auto_now_add=True)
-
+    def get_mother_id(self):
+        """Helper method to directly access mother's ID"""
+        return self.child.id
+    
+    def clean(self):
+        """Additional validation"""
+        if not self.child_id:
+            raise ValidationError("Child/Mother ID is required")
+        
+        # Vaccine-specific validations
+        if self.vaccine_type == 'BCG' and not self.scar_checked:
+            raise ValidationError("Scar check status is required for BCG vaccine")
+    
+    def clean(self):
+        """Validate vaccine-specific requirements"""
+        if self.vaccine_type == 'BCG' and not self.scar_checked:
+            raise ValidationError("Scar check status is required for BCG vaccine")
+        
+        if self.vaccine_type == 'VIT_A' and not self.vitamin_a_dose:
+            raise ValidationError("Vitamin A dose is required")
+            
+        if self.vaccine_type == 'DEWORM' and not self.deworming_dosage:
+            raise ValidationError("Deworming dosage is required")
+    
     def __str__(self):
-        return self.name
+        return f"{self.get_vaccine_type_display()} for {self.child.name} on {self.date_administered}"
 
+class MicronutrientPowder(models.Model):
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='mnps' ,
+        to_field='id' )
+    month = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(6), MaxValueValidator(23)]
+    )
+    sachets_issued = models.PositiveSmallIntegerField(
+        default=10,
+        validators=[MinValueValidator(0), MaxValueValidator(10)]
+    )
+    date_issued = models.DateField()
+    next_visit_date = models.DateField()
+    notes = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        unique_together = ('child', 'month')
+        ordering = ['month']
+    
+    def __str__(self):
+        return f"MNP for {self.child.name} at {self.month} months"
 
+class HIVInfantTesting(models.Model):
+    TEST_TYPES = [
+        ('1st_pcr', '1st DNA PCR'),
+        ('confirm_pcr', 'Confirmatory DNA PCR'),
+        ('2nd_pcr', '2nd DNA PCR (6 months)'),
+        ('3rd_pcr', '3rd DNA PCR (12 months)'),
+        ('antibody_18m', 'Antibody test (18 months)'),
+        ('antibody_24m', 'Antibody test (24 months)'),
+        ('final_antibody', 'Final antibody test (6 weeks post-weaning)'),
+    ]
+    
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='hiv_tests',
+        to_field='id' )
+    test_type = models.CharField(max_length=20, choices=TEST_TYPES)
+    sample_date = models.DateField()
+    result = models.CharField(max_length=20, choices=[
+        ('positive', 'Positive'),
+        ('negative', 'Negative'),
+        ('pending', 'Pending'),
+        ('indeterminate', 'Indeterminate'),
+    ])
+    viral_load = models.PositiveIntegerField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['sample_date']
+    
+    def __str__(self):
+        return f"{self.get_test_type_display()} for {self.child.name}"
 
+class ARVProphylaxis(models.Model):
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='arv_prophylaxis')
+    start_date = models.DateField()
+    regimen = models.CharField(max_length=100, default='AZT+NVP')
+    status = models.CharField(max_length=20, choices=[
+        ('continuing', 'Continuing'),
+        ('stopped', 'Stopped (HIV+)'),
+        ('completed', 'Completed'),
+    ])
+    discontinuation_date = models.DateField(null=True, blank=True)
+    discontinuation_reason = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "ARV Prophylaxis"
+        verbose_name_plural = "ARV Prophylaxes"
+    
+    def __str__(self):
+        return f"ARV for {self.child.name} ({self.get_status_display()})"
 
+class ARTRegimen(models.Model):
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='art_regimens')
+    start_date = models.DateField()
+    regimen = models.CharField(max_length=100)
+    current_dose = models.CharField(max_length=100)
+    last_viral_load = models.PositiveIntegerField(null=True, blank=True)
+    last_vl_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "ART Regimen"
+        ordering = ['-start_date']
+    
+    def __str__(self):
+        return f"ART for {self.child.name} ({self.regimen})"
 
+class CTXProphylaxis(models.Model):
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='ctx_prophylaxis')
+    start_date = models.DateField()
+    dose = models.CharField(max_length=50)
+    status = models.CharField(max_length=20, choices=[
+        ('active', 'Active'),
+        ('discontinued', 'Discontinued'),
+        ('completed', 'Completed'),
+    ])
+    discontinuation_date = models.DateField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "CTX Prophylaxis"
+        verbose_name_plural = "CTX Prophylaxes"
+    
+    def __str__(self):
+        return f"CTX for {self.child.name} ({self.get_status_display()})"
 
+class InfantIPT(models.Model):
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='ipt_records')
+    eligible = models.BooleanField(default=False)
+    start_date = models.DateField(null=True, blank=True)
+    dose = models.CharField(max_length=50, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=[
+        ('active', 'Active'),
+        ('completed', 'Completed'),
+    ], null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "Infant IPT"
+        verbose_name_plural = "Infant IPTs"
+    
+    def __str__(self):
+        return f"IPT for {self.child.name} ({self.get_status_display()})"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+class AdverseEvent(models.Model):
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='adverse_events')
+    immunization = models.ForeignKey(
+        Immunization, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='adverse_events'
+    )
+    date_occurred = models.DateField(default=timezone.now)
+    description = models.TextField()
+    vaccine_type = models.CharField(max_length=50, null=True, blank=True)
+    batch_number = models.CharField(max_length=50, null=True, blank=True)
+    manufacturer = models.CharField(max_length=100, null=True, blank=True)
+    manufacture_date = models.DateField(null=True, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+    action_taken = models.TextField(null=True, blank=True)
+    reported_to_authorities = models.BooleanField(default=False)
+    reported_date = models.DateField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-date_occurred']
+        verbose_name = "Adverse Event Following Immunization"
+        verbose_name_plural = "Adverse Events Following Immunization"
+    
+    def __str__(self):
+        return f"AEFI for {self.child.name} on {self.date_occurred}"

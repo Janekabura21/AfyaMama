@@ -1,58 +1,188 @@
-<div class="container mt-4">
-    <h2>Search Maternal Records</h2>
-    <input type="text" id="searchInput" class="form-control" placeholder="Search by Mother ID, Name, or Child Name">
+<form method="get" action="{% url 'search_records' %}">
+    <label for="mother_name">Mother's Name:</label>
+    <input type="text" id="mother_name" name="mother_name" value="{{ request.GET.mother_name }}">
     
-    <ul id="searchResults" class="list-group mt-2"></ul>
+    <label for="mother_identification">Mother's ID or Birth Certificate:</label>
+    <input type="text" id="mother_identification" name="mother_identification" value="{{ request.GET.mother_identification }}">
+    
+    <label for="child_name">Child's Name:</label>
+    <input type="text" id="child_name" name="child_name" value="{{ request.GET.child_name }}">
+    
+    <button type="submit">Search</button>
+</form>
+
+{% if error_message %}
+    <p style="color: red;">{{ error_message }}</p>
+{% endif %}
+
+{% if results %}
+    <h2>Search Results:</h2>
+    <ul>
+        {% for result in results %}
+            <li>
+                <strong>Mother:</strong> {{ result.mother.name }}<br>
+                <strong>Children:</strong>
+                <ul>
+                    {% for child in result.children %}
+                        <li>{{ child.name }} - {{ child.date_of_birth }}</li>
+                    {% endfor %}
+                </ul>
+                <a href="{% url 'edit_record' mother_id=result.mother.identification_number %}">Edit Record</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <div class="container mt-4">
+    <h2 class="mb-4">Search Maternal & Child Records</h2>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="motherIdInput">Mother's ID Number</label>
+                <input type="text" id="motherIdInput" class="form-control" placeholder="Enter mother's ID">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="motherNameInput">Mother's Name</label>
+                <input type="text" id="motherNameInput" class="form-control" placeholder="Enter mother's name">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="childNameInput">Child's Name</label>
+                <input type="text" id="childNameInput" class="form-control" placeholder="Enter child's name">
+            </div>
+        </div>
+    </div>
+    
+    <button id="searchButton" class="btn btn-primary mt-2">
+        <i class="fas fa-search mr-2"></i>Search Records
+    </button>
+    
+    <div class="card mt-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Search Results</h5>
+        </div>
+        <div class="card-body">
+            <div id="loadingIndicator" class="text-center" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p>Searching records...</p>
+            </div>
+            <div id="searchResults">
+                <p class="text-muted">Enter search criteria to find records</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    document.getElementById('searchInput').addEventListener('input', function() {
-        let query = this.value.trim();
-        if (query.length > 2) {  
-            fetch(`/search_maternal_records/?q=${query}`)
-                .then(response => response.json())
-                .then(data => {
-                    let resultsList = document.getElementById('searchResults');
-                    resultsList.innerHTML = "";
+document.getElementById('searchButton').addEventListener('click', function() {
+    const motherId = document.getElementById('motherIdInput').value.trim();
+    const motherName = document.getElementById('motherNameInput').value.trim();
+    const childName = document.getElementById('childNameInput').value.trim();
+    
+    // Show loading indicator
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('searchResults').innerHTML = '';
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (motherId) params.append('mother_id', motherId);
+    if (motherName) params.append('mother_name', motherName);
+    if (childName) params.append('child_name', childName);
+    
+    fetch(`/search_maternal_records/?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loadingIndicator').style.display = 'none';
+            const resultsContainer = document.getElementById('searchResults');
+            
+            if (data.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-warning">
+                        No matching records found. Please try different search criteria.
+                    </div>
+                `;
+                return;
+            }
+            
+            let resultsHTML = '<div class="list-group">';
+            
+            data.forEach(item => {
+                resultsHTML += `
+                    <a href="${item.edit_url}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${item.mother_name} <small>(ID: ${item.mother.identification_number})</small></h6>
+                            <small>${item.child_dob || ''}</small>
+                        </div>
+                        <p class="mb-1">Child: ${item.child_name || 'No child record'}</p>
+                        <small class="text-muted">Click to view/edit record</small>
+                    </a>
+                `;
+            });
+            
+            resultsHTML += '</div>';
+            resultsContainer.innerHTML = resultsHTML;
+        })
+        .catch(error => {
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('searchResults').innerHTML = `
+                <div class="alert alert-danger">
+                    Error searching records. Please try again.
+                </div>
+            `;
+            console.error('Search error:', error);
+        });
+});
 
-                    if (data.length === 0) {
-                        resultsList.innerHTML = "<li class='list-group-item'>No records found</li>";
-                    }
-
-                    data.forEach(item => {
-                        let li = document.createElement('li');
-                        li.classList.add('list-group-item', 'list-group-item-action');
-                        li.textContent = `${item.mother_name} (ID: ${item.mother_id}) - Child: ${item.child_name}`;
-                        li.onclick = function() {
-                            window.location.href = item.profile_url;
-                        };
-                        resultsList.appendChild(li);
-                    });
-                });
+// Allow pressing Enter in any input field to trigger search
+document.querySelectorAll('.form-control').forEach(input => {
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('searchButton').click();
         }
     });
-</script>
-
-
-
-
-
-
-
-
-<!-- <div class="container">
-    <h2>Search Results</h2>
-
-    {% if mothers or children %}
-        <ul>
-            {% for mother in mothers %}
-                <li><a href="{% url 'edit_record' mother.id %}">{{ mother.name }}</a></li>
-            {% endfor %}
-            {% for child in children %}
-                <li><a href="{% url 'edit_record' child.mother.id %}">{{ child.name }} (Child of {{ child.mother.name }})</a></li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No records found.</p>
-    {% endif %}
-</div> -->
+});
+</script> -->

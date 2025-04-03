@@ -7,8 +7,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #006400; /* Kenyan green */
-            color: white;
+            background-color: #ADD8E6; /* Baby blue */
+            color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,16 +17,16 @@
         }
 
         .login-container {
-            background-color: #000; /* Kenyan black */
+            background-color: #FFC0CB; /* Pink */
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
             text-align: center;
             width: 300px;
         }
 
         h2 {
-            color: #FF0000; /* Kenyan red */
+            color: #FF69B4; /* Hot pink */
         }
 
         form {
@@ -43,21 +43,22 @@
 
         input {
             background-color: white;
-            color: black;
+            color: #333;
+            border: 1px solid #FF69B4; /* Hot pink border */
         }
 
         button {
-            background-color: #FF0000; /* Kenyan red */
+            background-color: #FF69B4; /* Hot pink */
             color: white;
             cursor: pointer;
         }
 
         button:hover {
-            background-color: #8B0000; /* Darker red */
+            background-color: #FF1493; /* Deeper pink */
         }
 
         a {
-            color: #008000; /* Green */
+            color: #1E90FF; /* Dodger blue */
             text-decoration: none;
             display: block;
             margin-top: 10px;
@@ -80,27 +81,3 @@
     </div>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-<!-- <!DOCTYPE html>
-<html>
-<head>
-    <title>Hospital Login</title>
-</head>
-<body>
-    <h2>Login</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
-    <a href="{% url 'register_hospital' %}">Don't have an account? Register</a>
-</body>
-</html> -->

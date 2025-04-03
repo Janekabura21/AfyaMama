@@ -1,0 +1,828 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>MATERNAL PROFILE</h1>
+
+<h3>Add Immunization Record</h3>
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="immunization-card">
+        <h2 class="text-center">IMMUNIZATION</h2>
+        <h3 class="text-center">PROTECT YOUR CHILD</h3>
+      
+        <!-- BCG Vaccine Table -->
+        <div class="vaccine-section">
+          <h4>BCG VACCINE: at birth (intra-dermal left fore arm)</h4>
+          <table class="table table-bordered immunization-table">
+            <thead>
+              <tr>
+                <th>Dose</th>
+                <th>Date Given</th>
+                <th>Date of next visit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>0.05ml (for child below 1 year)</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+              <tr>
+                <td>0.1ml (for child above 1 year)</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="row mt-2">
+            <div class="col-md-6">
+              <label>BCG-Scar Checked (Date Checked)</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="scarStatus" id="scarPresent">
+                <label class="form-check-label" for="scarPresent">PRESENT</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="scarStatus" id="scarAbsent">
+                <label class="form-check-label" for="scarAbsent">ABSENT</label>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-2">
+            <label>Repeat vaccine BCG (Date repeated)</label>
+            <input type="date" class="form-control">
+          </div>
+        </div>
+      
+        <!-- Polio Vaccine Section -->
+        <div class="vaccine-section mt-4">
+          <h4>POLIO VACCINE: (Bivalent Oral Polio Vaccine(bOPV))</h4>
+          <p><strong>Dose:</strong> 2 drops orally</p>
+          
+          <table class="table table-bordered immunization-table">
+            <thead>
+              <tr>
+                <th>Dose</th>
+                <th>Date Given</th>
+                <th>Date of next visit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Birth Dose at birth or within 2wks</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+              <tr>
+                <td>1st Dose at 6 weeks</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+              <tr>
+                <td>2nd Dose at 10 weeks</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+              <tr>
+                <td>3rd Dose at 14 weeks</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <h5 class="mt-3">IPV (Inactivated Polio Vaccine)</h5>
+          <p>IPV (0.5ml) Dose at 14 weeks intramuscular into the outer aspect of the right thigh 2.5cm (2 fingers apart) from the site of PCV10 injection.</p>
+          <div class="row">
+            <div class="col-md-6">
+              <label>Date Given</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label>Next Visit</label>
+              <input type="date" class="form-control">
+            </div>
+          </div>
+        </div>
+      
+        <!-- Pentavalent Vaccine Section -->
+        <div class="vaccine-section mt-4">
+          <h4>DIPHTHERIA/PERTUSSIS/TETANUS/HEPATITIS B/HAEMOPHILUS INFLUENZA Type b</h4>
+          <p><strong>Dose:</strong> 0.5ml Intra Muscular left outer thigh</p>
+          
+          <table class="table table-bordered immunization-table">
+            <thead>
+              <tr>
+                <th>Dose</th>
+                <th>Date Given</th>
+                <th>Date of next visit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1st Dose at 6 weeks</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+              <tr>
+                <td>2nd Dose at 10 weeks</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+              <tr>
+                <td>3rd Dose at 14 weeks</td>
+                <td><input type="date" class="form-control"></td>
+                <td><input type="date" class="form-control"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      
+        <!-- Add similar sections for PCV and Rotavirus vaccines -->
+      <!-- Pneumococcal Conjugate Vaccine (PCV) Section -->
+<div class="vaccine-section mt-4">
+    <h4>PNEUMOCOCCAL CONJUGATE VACCINE (PCV)</h4>
+    <p><strong>Dose:</strong> 0.5ml Intramuscular into the upper outer aspect of the right thigh</p>
+    
+    <table class="table table-bordered immunization-table">
+      <thead>
+        <tr>
+          <th>Dose</th>
+          <th>Date Given</th>
+          <th>Date of next visit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1st Dose at 6 weeks</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>2nd Dose at 10 weeks</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>3rd Dose at 14 weeks</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="row mt-2">
+      <div class="col-md-6">
+        <label>Injection Site</label>
+        <select class="form-control">
+          <option>Right thigh (upper outer)</option>
+          <option>Left thigh (upper outer)</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label>Batch Number</label>
+        <input type="text" class="form-control" placeholder="Enter batch number">
+      </div>
+    </div>
+  </div>
+  
+  <!-- Rotavirus Vaccine Section -->
+  <div class="vaccine-section mt-4">
+    <h4>ROTAVIRUS VACCINE</h4>
+    <p><strong>Dose:</strong> 0.5ml (5 drops) administered orally</p>
+    
+    <table class="table table-bordered immunization-table">
+      <thead>
+        <tr>
+          <th>Dose</th>
+          <th>Date Given</th>
+          <th>Date of next visit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1st dose at 6 weeks</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>2nd dose at 10 weeks</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>3rd dose at 14 weeks</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="row mt-2">
+      <div class="col-md-6">
+        <label>Administered By</label>
+        <input type="text" class="form-control" placeholder="Health worker name">
+      </div>
+      <div class="col-md-6">
+        <label>Reaction Observed</label>
+        <select class="form-control">
+          <option>None</option>
+          <option>Mild (vomiting)</option>
+          <option>Moderate (diarrhea)</option>
+          <option>Severe (intussusception)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="alert alert-warning mt-3">
+      <strong>Note:</strong> Rotavirus vaccine should not be given to infants with history of intussusception or severe combined immunodeficiency (SCID).
+    </div>
+  </div>
+
+  <!-- Measles Rubella (MR) Vaccine Section -->
+<div class="vaccine-section mt-4">
+    <h4>MEASLES RUBELLA VACCINE (MR)</h4>
+    
+    <!-- MR at 6 months -->
+    <div class="mb-3">
+      <h5>MR at 6 months (for measles rubella outbreak or HIV Exposed Infant)</h5>
+      <p><strong>Dose:</strong> 0.5ml, deep subcutaneous injection into the right upper arm deltoid muscle.</p>
+      <div class="row">
+        <div class="col-md-6">
+          <label>Date Given</label>
+          <input type="date" class="form-control">
+        </div>
+        <div class="col-md-6">
+          <label>Date of next visit</label>
+          <input type="date" class="form-control">
+        </div>
+      </div>
+    </div>
+    
+    <!-- MR at 9 months -->
+    <div class="mb-3">
+      <h5>MR at 9 months</h5>
+      <p><strong>Dose:</strong> 0.5ml, deep subcutaneous injection, over the deltoid muscle, upper right arm.</p>
+      <div class="row">
+        <div class="col-md-6">
+          <label>Date Given</label>
+          <input type="date" class="form-control" value="2025-07-06">
+        </div>
+        <div class="col-md-6">
+          <label>Date of next visit</label>
+          <input type="date" class="form-control" value="2024-09-07">
+        </div>
+      </div>
+    </div>
+    
+    <!-- MR at 18 months -->
+    <div class="mb-3">
+      <h5>MR at 18 Months</h5>
+      <p><strong>Dose:</strong> 0.5ml, deep subcutaneous injection, over the deltoid muscle, upper right arm.</p>
+      <div class="row">
+        <div class="col-md-6">
+          <label>Date Given</label>
+          <input type="text" class="form-control" placeholder="1a03a5">
+        </div>
+        <div class="col-md-6">
+          <label>Date of next visit</label>
+          <input type="text" class="form-control" placeholder="1a10b05">
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Yellow Fever Vaccine Section -->
+  <div class="vaccine-section mt-4">
+    <h4>YELLOW FEVER VACCINE at 9 months**</h4>
+    <p><strong>** Only in selected counties</strong></p>
+    <p><strong>Dose:</strong> 0.5ml, Intra Muscular left upper deltoid</p>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <label>Date Given</label>
+        <input type="date" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <label>Date of next visit</label>
+        <input type="date" class="form-control">
+      </div>
+    </div>
+    
+    <div class="row mt-2">
+      <div class="col-md-6">
+        <label>Batch Number</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="yellowFeverEligible">
+          <label class="form-check-label" for="yellowFeverEligible">Eligible for Yellow Fever vaccine</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Other Vaccines Section -->
+  <div class="vaccine-section mt-4">
+    <h4>OTHER VACCINES</h4>
+    <p>Other vaccines refer to those not in the usual KEPI schedule and may include Typhoid etc.</p>
+    
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>VACCINE</th>
+          <th>DATE GIVEN</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="text" class="form-control" placeholder="Vaccine name"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td><input type="text" class="form-control" placeholder="Vaccine name"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="btn btn-sm btn-secondary">Add Another Vaccine</button>
+  </div>
+  
+  <!-- Adverse Events Section -->
+  <div class="vaccine-section mt-4 alert alert-danger">
+    <h4>ADVERSE EVENT FOLLOWING IMMUNIZATION (AEFI)</h4>
+    
+    <div class="row">
+      <div class="col-md-4">
+        <label>DATE</label>
+        <input type="date" class="form-control">
+      </div>
+      <div class="col-md-8">
+        <label>DESCRIBE</label>
+        <textarea class="form-control" rows="2"></textarea>
+      </div>
+    </div>
+    
+    <div class="row mt-2">
+      <div class="col-md-4">
+        <label>Antigen Vaccine</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label>Batch Number</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label>Manufacturer's Name</label>
+        <input type="text" class="form-control">
+      </div>
+    </div>
+    
+    <div class="row mt-2">
+      <div class="col-md-6">
+        <label>Manufacture Date</label>
+        <input type="date" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <label>Expiry Date</label>
+        <input type="date" class="form-control">
+      </div>
+    </div>
+    
+    <button class="btn btn-danger mt-3">Report Adverse Event</button>
+  </div>
+  
+  <!-- Vitamin A Supplementation Section -->
+<div class="vaccine-section">
+    <h3>VITAMIN A SUPPLEMENTATION (VAS)</h3>
+    <p><strong>VITAMIN A CAPSULE:</strong> Given orally (Start at 6 months or at first contact thereafter)</p>
+    
+    <table class="table table-bordered">
+      <thead class="table-primary">
+        <tr>
+          <th>Dose</th>
+          <th>Age</th>
+          <th>Age given</th>
+          <th>Date given</th>
+          <th>Date of next visit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>100,000IU</td>
+          <td>6 months</td>
+          <td><input type="text" class="form-control" value="6/1~"></td>
+          <td><input type="date" class="form-control" value="2024-08-03"></td>
+          <td><input type="date" class="form-control" value="2027-08-04"></td>
+        </tr>
+        <tr>
+          <td>200,000IU</td>
+          <td>12 months (1 year)</td>
+          <td><input type="text" class="form-control" value="10/2/25"></td>
+          <td><input type="date" class="form-control" value="2028-11-07"></td>
+          <td><input type="date" class="form-control" value="2026-09-05"></td>
+        </tr>
+        <tr>
+          <td>200,000IU</td>
+          <td>18 months (1½ years)</td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <!-- Additional rows for other ages -->
+        <tr>
+          <td>200,000IU</td>
+          <td>24 months (2 years)</td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>200,000IU</td>
+          <td>30 months (2½ years)</td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>200,000IU</td>
+          <td>36 months (3 years)</td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="alert alert-info mt-3">
+      <strong>Note:</strong>
+      <ul>
+        <li>Do not give Vitamin A Supplementation if 30 days have not elapsed since the last dose</li>
+        <li>For treatment of measles or Vitamin A deficiency related eye conditions, give appropriate dose on day zero, 24 hrs later and 14 days later</li>
+      </ul>
+    </div>
+  </div>
+  
+  <!-- Micronutrient Powders (MNPs) Section -->
+  <div class="vaccine-section mt-4">
+    <h3>MICRONUTRIENT POWDERS (MNPs)</h3>
+    <p><strong>Dosage:</strong> 10 sachets per month</p>
+    
+    <table class="table table-bordered">
+      <thead class="table-primary">
+        <tr>
+          <th>Age in months</th>
+          <th>6</th>
+          <th>7</th>
+          <th>8</th>
+          <th>9</th>
+          <th>10</th>
+          <th>11</th>
+          <th>12</th>
+          <th>13</th>
+          <th>14</th>
+          <th>15</th>
+          <th>16</th>
+          <th>17</th>
+          <th>18</th>
+          <th>19</th>
+          <th>20</th>
+          <th>21</th>
+          <th>22</th>
+          <th>23</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Number issued</td>
+          <td><input type="number" class="form-control" min="0" max="10"></td>
+          <td><input type="number" class="form-control" min="0" max="10"></td>
+          <!-- Repeat for all months -->
+        </tr>
+        <tr>
+          <td>Date issued</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <!-- Repeat for all months -->
+        </tr>
+        <tr>
+          <td>Date of next visit</td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <!-- Repeat for all months -->
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="alert alert-info mt-3">
+      <strong>NOTE:</strong>
+      <ol>
+        <li>Give 1 sachet every 3rd day</li>
+        <li>Add to semi-solid food and mix</li>
+        <li>Add in warm food NOT HOT</li>
+        <li>Should be eaten within half an hour after mixing</li>
+        <li>MNPs should not be added to liquid foods or drinks</li>
+      </ol>
+    </div>
+  </div>
+  
+  <!-- Deworming Section -->
+  <div class="vaccine-section mt-4">
+    <h3>DEWORMING</h3>
+    <p>Give once every six months to all children one year and above. Albendazole 200mg (Half a tablet) for children 1 to 2 years and 400mg (One tablet) for children 2 years and above</p>
+    
+    <table class="table table-bordered">
+      <thead class="table-primary">
+        <tr>
+          <th>Age</th>
+          <th>Dosage/Tablet</th>
+          <th>Age given</th>
+          <th>Date given</th>
+          <th>Next visit</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>12 months (1 year)</td>
+          <td>
+            <select class="form-control">
+              <option value="">Select dosage</option>
+              <option value="200mg">200mg (½ tablet)</option>
+              <option value="400mg">400mg (1 tablet)</option>
+            </select>
+          </td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>18 months (1½ years)</td>
+          <td>
+            <select class="form-control">
+              <option value="">Select dosage</option>
+              <option value="200mg">200mg (½ tablet)</option>
+              <option value="400mg">400mg (1 tablet)</option>
+            </select>
+          </td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <!-- Additional rows for other ages -->
+        <tr>
+          <td>24 months (2 years)</td>
+          <td>
+            <select class="form-control">
+              <option value="">Select dosage</option>
+              <option value="200mg">200mg (½ tablet)</option>
+              <option value="400mg">400mg (1 tablet)</option>
+            </select>
+          </td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+        <tr>
+          <td>30 months (2½ years)</td>
+          <td>
+            <select class="form-control">
+              <option value="400mg">400mg (1 tablet)</option>
+            </select>
+          </td>
+          <td><input type="text" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+          <td><input type="date" class="form-control"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- HIV Exposed Infant Section -->
+<div class="hiv-section alert alert-warning">
+    <h3>HIV EXPOSED INFANT (HEI) TRACKING</h3>
+    
+    <!-- HIV Testing Schedule -->
+    <div class="mb-4">
+      <h4>HIV Testing Schedule</h4>
+      <table class="table table-bordered">
+        <thead class="table-warning">
+          <tr>
+            <th>Type of Test</th>
+            <th>Date of Sample Collection</th>
+            <th>Results</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1st DNA PCR (at delivery/6 weeks)</td>
+            <td><input type="date" class="form-control"></td>
+            <td>
+              <select class="form-control">
+                <option value="">Select result</option>
+                <option value="positive">Positive</option>
+                <option value="negative">Negative</option>
+                <option value="pending">Pending</option>
+              </select>
+            </td>
+            <td><button class="btn btn-sm btn-outline-primary">Record</button></td>
+          </tr>
+          <tr class="bg-light">
+            <td colspan="4"><small>If 1st PCR positive: collect confirmatory DNA PCR + baseline viral load, start ART</small></td>
+          </tr>
+          <tr>
+            <td>2nd DNA PCR (6 months)</td>
+            <td><input type="date" class="form-control"></td>
+            <td><select class="form-control">...</select></td>
+            <td><button class="btn btn-sm btn-outline-primary">Record</button></td>
+          </tr>
+          <tr>
+            <td>3rd DNA PCR (12 months)</td>
+            <td><input type="date" class="form-control"></td>
+            <td><select class="form-control">...</select></td>
+            <td><button class="btn btn-sm btn-outline-primary">Record</button></td>
+          </tr>
+          <tr>
+            <td>Antibody test (18 months)</td>
+            <td><input type="date" class="form-control"></td>
+            <td><select class="form-control">...</select></td>
+            <td><button class="btn btn-sm btn-outline-primary">Record</button></td>
+          </tr>
+          <tr class="bg-light">
+            <td colspan="4">
+              <small>
+                If breastfeeding: Antibody test at 24 months (repeat every 6 months until weaning)<br>
+                Final antibody test 6 weeks after weaning
+              </small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="alert alert-info mt-2">
+        <strong>Key:</strong> DNA PCR-DNA polymerase chain reaction • DBS-Dried blood spot<br>
+        <strong>Note:</strong> Encourage exclusive breastfeeding for all infants including HEI
+      </div>
+    </div>
+  
+    <!-- ARV Prophylaxis Section -->
+    <div class="mb-4">
+      <h4>ARV PROPHYLAXIS</h4>
+      <div class="card">
+        <div class="card-body">
+          <p><strong>Regimen:</strong> AZT + NVP for 6 weeks (dose adjusted by weight/age)</p>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <label>Start Date</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label>NVP Continuation</label>
+              <select class="form-control">
+                <option value="12weeks">12 weeks (if not breastfeeding)</option>
+                <option value="until_weaning">Until 6 weeks after weaning</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label>Status</label>
+              <select class="form-control">
+                <option value="continuing">Continuing</option>
+                <option value="stopped">Stopped (HIV+)</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- CTX Prophylaxis Section -->
+    <div class="mb-4">
+      <h4>CTX PROPHYLAXIS</h4>
+      <div class="card">
+        <div class="card-body">
+          <p><strong>Dose:</strong> CTX syrup 2.5 mL OD (adjusted by weight/age)</p>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <label>Start Date</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label>Current Dose</label>
+              <input type="text" class="form-control" placeholder="e.g. 2.5mL">
+            </div>
+            <div class="col-md-4">
+              <label>Discontinuation Date</label>
+              <input type="date" class="form-control">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- Infant IPT Section -->
+    <div class="mb-4">
+      <h4>INFANT IPT</h4>
+      <div class="card">
+        <div class="card-body">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="iptEligible">
+            <label class="form-check-label" for="iptEligible">Infant eligible for IPT</label>
+          </div>
+          
+          <div class="row mt-2">
+            <div class="col-md-4">
+              <label>Start Date</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label>Dose</label>
+              <input type="text" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label>Status</label>
+              <select class="form-control">
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- HIV Infected Infant Section -->
+  <div class="hiv-section alert alert-danger mt-4">
+    <h3>HIV INFECTED INFANT MANAGEMENT</h3>
+    
+    <div class="mb-4">
+      <h4>ANTIRETROVIRAL THERAPY (ART)</h4>
+      <div class="card">
+        <div class="card-body">
+          <p><strong>Regimen:</strong> ART for life (dose adjusted by weight/age)</p>
+          
+          <div class="row">
+            <div class="col-md-4">
+              <label>ART Start Date</label>
+              <input type="date" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label>Current Regimen</label>
+              <select class="form-control">
+                <option value="">Select regimen...</option>
+                <option value="ABC+3TC+LPV/r">ABC + 3TC + LPV/r</option>
+                <option value="AZT+3TC+NVP">AZT + 3TC + NVP</option>
+                <!-- Add other regimens as needed -->
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label>Viral Load (copies/mL)</label>
+              <input type="number" class="form-control">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <!-- CTX Prophylaxis for HIV+ Infant -->
+    <div class="mb-4">
+      <h4>CTX PROPHYLAXIS</h4>
+      <div class="card">
+        <div class="card-body">
+          <p><strong>Dose:</strong> CTX syrup 2.5 mL OD (adjusted by weight)</p>
+          <!-- Similar to HEI CTX section -->
+        </div>
+      </div>
+    </div>
+  
+    <!-- IPT for HIV+ Infant -->
+    <div class="mb-4">
+      <h4>IPT</h4>
+      <div class="card">
+        <div class="card-body">
+          <!-- Similar to HEI IPT section -->
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
+  </div>
+
+        <div class="note-section mt-4">
+          <p class="text-center"><strong>Take your child to the health facility, every month until he/she is 5 years old</strong></p>
+        </div>
+      </div>
+    <button type="submit">Save Immunization Record</button>
+</form>
+
+{% endblock %}

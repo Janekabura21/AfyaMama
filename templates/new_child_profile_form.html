@@ -1,17 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-
-{% if mother_profile %}
-    <p>Mother: {{ mother_profile.name }}</p>
-{% endif %}
-
-<form method="POST">
+<!-- maternal_profile_form.html -->
+<form method="post" action="{{ form_action|default:request.path }}">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Save</button>
 </form>
-
-
 {% endblock %}

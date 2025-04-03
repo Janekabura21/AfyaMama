@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import HospitalUser, MaternalProfile, Patient, Appointment, PreviousPregnancy
+from .models import ChildProfile, HospitalUser, MaternalProfile, Patient, Appointment, PreviousPregnancy
 
 # Customizing the HospitalUser Admin View
 class HospitalUserAdmin(UserAdmin):
@@ -31,13 +31,65 @@ class AppointmentAdmin(admin.ModelAdmin):
     list_filter = ("status", "attended", "date")
 
 class MaternalProfileAdmin(admin.ModelAdmin):
+    
     list_display = ("name", "age", "gravida", "parity", "edd", "county", "telephone")
-    search_fields = ("name", "id_number", "huduma_number", "telephone")
+    search_fields = ("name", "identification_number", "huduma_number", "telephone")
     list_filter = ("marital_status", "county", "education_level")
+
+    def age(self, obj):
+        # Calculate age based on date_of_birth field
+        from datetime import date
+        age = (date.today() - obj.date_of_birth).days // 365  # Age in years
+        return age
+
+    age.admin_order_field = 'date_of_birth'  # Enables sorting by date_of_birth
+    age.short_description = "Age"
+
 
 class PreviousPregnancyAdmin(admin.ModelAdmin):
     list_display = ('mother', 'pregnancy_order', 'year', 'mode_of_delivery', 'birth_weight', 'outcome')
     search_fields = ('mother__name', 'mode_of_delivery', 'outcome')
+
+
+# In admin.py
+@admin.register(ChildProfile)
+class ChildProfileAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'mothers_profile')
+    list_display_links = ('id', 'name')
+
+
+
+
+
+
+
+
+
+
+    from django.contrib import admin
+from .models import Immunization, AdverseEvent
+
+@admin.register(Immunization)
+class ImmunizationAdmin(admin.ModelAdmin):
+    list_display = ('get_mother_id', 'child_name', 'vaccine_type', 'date_administered', 'dose_number')
+    list_filter = ('child__id', 'vaccine_type', 'date_administered')
+    search_fields = ('child__id', 'child__name', 'vaccine_type')
+    
+    def get_mother_id(self, obj):
+        return obj.child.id
+    get_mother_id.short_description = 'Mother ID'
+    get_mother_id.admin_order_field = 'child__id'
+    
+    def child_name(self, obj):
+        return obj.child.name
+    child_name.short_description = 'Child Name'
+
+@admin.register(AdverseEvent)
+class AdverseEventAdmin(admin.ModelAdmin):
+    list_display = ('child', 'date_occurred', 'description', 'reported_to_authorities')
+    list_filter = ('date_occurred', 'reported_to_authorities')
+    search_fields = ('child__name', 'description', 'batch_number')
+
 
 # ✅ Register models correctly
 admin.site.register(HospitalUser, HospitalUserAdmin)

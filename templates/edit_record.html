@@ -1,0 +1,102 @@
+
+{% extends 'base.html' %}
+
+{% block title %}Hospital Dashboard{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+    h2 {
+        text-align: center;
+        color: red;
+    }
+    .container {
+        width: 50%;
+        margin: auto;
+        text-align: center;
+    }
+    .sections-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    .sections-list li {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+    }
+    .sections-list a {
+        text-decoration: none;
+        color: blue;
+        font-size: 16px;
+    }
+    .form-container {
+        margin-top: 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+</style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 style="color: red; text-align: center;">
+            Edit Existing Records for {{ mother.name }}
+            {% if children %}
+                and {{ children.0.name }}
+            {% endif %}
+        </h2>
+    
+        <!-- Sections -->
+        <ul class="sections-list">
+            {% for section in sections %}
+                <li><a href="{{ section.url }}">{{ section.title }}</a></li>
+    
+                {% if section.title == "Child Profile" and children %}
+                    <ul>
+                        {% for child in children %}
+                            <!-- <li>
+                                ➤ {{ child.name }} 
+                                <a href="{% url 'child_profile_form' child.mothers_profile.identification_number %}">Child Profile</a>
+                            </li> -->
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+    
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %} 
+
+
+
+
+
+
+
+
+
+
+<!-- <div class="container">
+    <h2>Edit Existing Records for {{ mother.name }} {% if children %} and {{ children.0.name }}{% endif %}</h2>
+
+    <!-- Section Links -->
+    <!-- <ul class="sections-list">
+        {% for section in sections %}
+            <li>
+                <a href="{{ section.url }}">{{ section.title }}</a>
+            </li>
+        {% empty %}
+            <li>No data available.</li>
+        {% endfor %}
+    </ul> -->
+<!-- </div> --> -->
+
+
+
+
+
+

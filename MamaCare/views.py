@@ -1,15 +1,19 @@
-
 # Create your views here.
-from django.http import HttpResponse, JsonResponse
+from datetime import date, timezone
+import datetime
+from venv import logger
+from django.forms import ValidationError
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import NoReverseMatch, reverse
 from django.utils.timezone import now
 
-from .forms import AppointmentForm, ChildForm, ChildProfileForm, HealthRecordForm, MaternalProfileForm, MotherForm, PhysicalExaminationForm, PregnancyRecordForm, RecordForm
+from .forms import AppointmentForm,  ChildProfileForm, HealthRecordForm, ImmunizationForm, MaternalProfileForm,  PhysicalExaminationForm,  RecordForm
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegistrationForm, HospitalLoginForm, PreviousPregnancyForm
-from .models import Appointment, Child, ChildProfile, HospitalUser, MaternalProfile, Mother, Patient, PreviousPregnancy
+from .models import Appointment, ChildProfile, HospitalUser, Immunization, MaternalProfile, PreviousPregnancy 
 from django.db.models import Q
 
 
@@ -121,17 +125,9 @@ def add_new_record(request):
         form = RecordForm()
 
     sections = [
-        # {"title": "ANC, Childbirth and Postnatal Care", "url": "anc_childbirth"},
-        {"title": "Maternal Profile", "url": "maternal_profile_form"},
-        {"title": "Child Profile", "url": "child_profile_form"},
-        # {"title": "Medical & Surgical History", "url": "medical_history"},
-        # {"title": "Previous Pregnancy", "url": "previous_pregnancy"},
-        # {"title": "Physical Examination [1st Visit]", "url": "physical_exam"},
-        # {"title": "Child Health Monitoring", "url": "child_health_monitoring"},
-        # {"title": "Health Record of Child", "url": "health_record"},
-        # {"title": "Immunization", "url": "immunization"},
-        # {"title": "Family Planning", "url": "family_planning"},
-        # {"title": "Hospital Admissions", "url": "hospital_admissions"},
+        
+        {"title": "Maternal Profile", "url": "new_maternal_profile_form"},
+        {"title": "Child Profile", "url": "new_child_profile_form"},
     ]
 
     return render(request, 'add_new_record.html', {'form': form, 'sections': sections})
@@ -139,84 +135,58 @@ def add_new_record(request):
 
 
 
-def child_profile_form(request):
-    if request.method == "POST":
-        form = ChildProfileForm(request.POST)
-        if form.is_valid():
-        # Save form or process data as needed
-            form.save()
-            return render(request, "success_page.html", {"message": "Child Profile Saved Successfully"})
-    else:
-        form = ChildProfileForm()
-    return render(request, "child_profile_form.html", {"form": form})
-
-
-
-
-
-
-
-def add_record(request):
-    if request.method == "POST":
-        mother_form = MotherForm(request.POST)
-        child_form = ChildForm(request.POST)
-
-        if mother_form.is_valid() and child_form.is_valid():
-            mother = mother_form.save()
-            child = child_form.save(commit=False)
-            child.mother = mother
-            child.save()
-            return render(request, 'success.html', {'message': 'Record Added Successfully!'})
-
-    else:
-        mother_form = MotherForm()
-        child_form = ChildForm()
-
-    return render(request, 'add_mother_&_child_records.html', {'mother_form': mother_form, 'child_form': child_form})
-
 def search_records(request):
-    query = request.GET.get('q', '').strip()
+    results = []
+    error_message = ""
 
-    if query:
-        # Search in Mother ID, Mother Name, or Child Name
-        mothers = MaternalProfile.objects.filter(
-            Q(mother_id__icontains=query) | 
-            Q(mother_name__icontains=query) | 
-            Q(childprofile__child_name__icontains=query)  # Related Child Profile
-        ).distinct()
+    if request.method == "GET":
+        # Get the search parameters from the request
+        mother_name = request.GET.get("mother_name", "").strip()
+        mother_identification = request.GET.get("mother_identification", "").strip()
+        child_name = request.GET.get("child_name", "").strip()
 
-        # Prepare JSON response
-        results = []
-        for mother in mothers:
-            child = ChildProfile.objects.filter(mother=mother).first()  # Get first child (if exists)
-            results.append({
-                "mother_id": mother.mother_id,
-                "mother_name": mother.mother_name,
-                "child_name": child.child_name if child else "No child record",
-                "profile_url": f"/maternal_profile/{mother.mother_id}/"  # Link to profile
-            })
+        if mother_identification:
+            # Search for mother by identification number (ID or birth certificate)
+            try:
+                mother = MaternalProfile.objects.get(identification_number=mother_identification)
+                # Also search for the child linked to that mother
+                child = ChildProfile.objects.filter(mothers_profile=mother)
+                results.append({"mother": mother, "children": child})
+            except MaternalProfile.DoesNotExist:
+                error_message = "No mother found with that identification number."
+        
+        elif mother_name:
+            # Search for mothers by name
+            mothers = MaternalProfile.objects.filter(name__icontains=mother_name)
+            if mothers.exists():
+                for mother in mothers:
+                    # For each mother, fetch linked children
+                    children = ChildProfile.objects.filter(mothers_profile=mother)
+                    results.append({"mother": mother, "children": children})
+            else:
+                error_message = "No mothers found with that name."
+        
+        elif child_name:
+            # Search for children by name and return the corresponding mother
+            children = ChildProfile.objects.filter(name__icontains=child_name)
+            if children.exists():
+                for child in children:
+                    mother = child.mothers_profile
+                    results.append({"mother": mother, "children": [child]})
+            else:
+                error_message = "No children found with that name."
+        
+        else:
+            error_message = "Please enter search criteria."
 
-        return JsonResponse(results, safe=False)
+        # If no records were found, show the error message
+        if not results:
+            error_message = error_message or "No records match the entered criteria."
 
-    return JsonResponse([], safe=False)
-    return render(request, 'search_results.html', {'mothers': mothers, 'children': children})
-
-
-
-def edit_record(request, mother_id):
-    mother = get_object_or_404(Mother, id=mother_id)
-    children = Child.objects.filter(mother=mother)
-
-    if request.method == "POST":
-        mother_form = MotherForm(request.POST, instance=mother)
-        if mother_form.is_valid():
-            mother_form.save()
-            return render(request, 'success.html', {'message': 'Record Updated Successfully!'})
-
-    else:
-        mother_form = MotherForm(instance=mother)
-
-        return render(request, 'edit_record.html', {'mother_form': mother_form, 'children': children})
+    return render(request, "search_records.html", {
+        "results": results,
+        "error_message": error_message
+    })
 
 
 def mother_child_records(request):
@@ -235,23 +205,23 @@ def mother_child_records(request):
     return render(request, "view_records.html", {"sections": sections})
 
 
-def mother_detail(request, mother_id):
-    mother = Mother.objects.get(id=mother_id)
-    return render(request, 'mother_detail.html', {'mother': mother})
+# def mother_detail(request, mother_id):
+#     mother = Mother.objects.get(id=mother_id)
+#     return render(request, 'mother_detail.html', {'mother': mother})
 
-def child_detail(request, child_id):
-    child = Child.objects.get(id=child_id)
-    return render(request, 'child_detail.html', {'child': child})
+# def child_detail(request, child_id):
+#     child = Child.objects.get(id=child_id)
+#     return render(request, 'child_detail.html', {'child': child}
 
 
 def add_records(request):
-    mother_form = MotherForm()
-    child_form = ChildForm()
+    mother_form = MaternalProfileForm()
+    child_form = ChildProfileForm()
     health_record_form = HealthRecordForm()
 
     if request.method == "POST":
-        mother_form = MotherForm(request.POST)
-        child_form = ChildForm(request.POST)
+        mother_form = MaternalProfileForm(request.POST)
+        child_form = ChildProfileForm(request.POST)
         health_record_form = HealthRecordForm(request.POST)
 
         if mother_form.is_valid():
@@ -325,6 +295,47 @@ def add_previous_pregnancy(request, mother_id):
 
 
 
+def update_existing_records(request):
+    error_message = None
+
+    if request.method == "POST":
+        mother_id = request.POST.get("mother_id", "").strip()
+        mother_name = request.POST.get("mother_name", "").strip()
+        child_name = request.POST.get("child_name", "").strip()
+
+        print(f"🔍 Searching for: Mother ID: {mother_id}, Mother Name: {mother_name}, Child Name: {child_name}")
+
+        mother = None
+        child = None
+
+        # 1️⃣ First, Search by Identification Number (Highest Priority)
+        if mother_id:
+            mother = MaternalProfile.objects.filter(identification_number=mother_id).first()
+            child = ChildProfile.objects.filter(id=mother_id).first()  # Find child with same ID
+
+        # 2️⃣ If No ID was provided, Search by Name
+        if not mother and mother_name:
+            mother = MaternalProfile.objects.filter(name__icontains=mother_name).first()
+        if not child and child_name:
+            child = ChildProfile.objects.filter(name__icontains=child_name).first()
+
+        # 3️⃣ If Mother is Found, Redirect to Edit Record
+        if mother:
+            return redirect(reverse("edit_record", args=[mother.identification_number]))
+
+        # 4️⃣ If Child is Found but No Mother was Entered, Use Child’s Mother
+        if child and child.mothers_profile:
+            return redirect(reverse("edit_record", args=[child.mothers_profile.identification_number]))
+
+        # 5️⃣ If No Records Found, Show an Error
+        error_message = "❌ No matching records found. Please check the details and try again."
+
+    return render(request, "update_records.html", {"error_message": error_message})
+
+
+
+
+
 
 
 
@@ -384,59 +395,532 @@ def hospital_admissions_view(request):
     return render(request, 'hospital_admissions.html')
 
 
-def pregnancy_record_view(request):
-    if request.method == 'POST':
-        form = PregnancyRecordForm(request.POST)
-        if form.is_valid():
-            form.save()
-            if 'redirect' in request.POST:
-                return redirect('success_page')  # Replace with actual URL
-            else:
-                return redirect('pregnancy_record')  # Redirect back to form page
-
-    else:
-        form = PregnancyRecordForm()
-
-    return render(request, 'pregnancy_record.html', {'form': form})
 
 
-def update_existing_records(request):
-    mother_name = None
-    error_message = None  
-    form_submitted = False  
 
+
+
+
+
+
+
+from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
+from .models import MaternalProfile, ChildProfile
+
+def edit_record(request, mother_id):
+    # Get mother by identification_number
+    mother = get_object_or_404(MaternalProfile, identification_number=mother_id)
+    
+    # Get children
+    
+    children = ChildProfile.objects.filter(mothers_profile=mother)
+    
+    # children = ChildProfile.objects.filter(
+    #     id=mother.identification_number,
+    #     mothers_profile=mother)
+
+    # Define sections
     sections = [
-        {"title": "Maternal Profile", "url": "maternal_profile_form"},
-        {"title": "Child Profile", "url": "child_profile_form"},
+        {
+            "title": "ANC, Childbirth and Postnatal Care",
+            "url_name": "anc_childbirth",
+            "data": mother,
+            "type": "single"
+        },
+        {
+            "title": "Maternal Profile",
+            "url_name": "maternal_profile_form", 
+            "data": mother,
+            "type": "single"
+        },
+        {
+            "title": "Child Profile",
+            "url_name": "child_profile_form", 
+            "data": children,
+            "type": "queryset"
+        },
+        {
+            "title": "Medical & Surgical History",
+            "url_name": "medical_history",
+            "data": mother,
+            "type": "single"
+        },
+        {
+            "title": "Child Health Monitoring",
+            "url_name": "child_health_monitoring",
+            "data": children,
+            "type": "queryset"
+        },
+        {
+            "title": "Health Record of Child",
+            "url_name": "health_record",
+            "data": children,
+            "type": "queryset"
+        },
+        {
+            "title": "Immunization",
+            "url_name": "immunization",
+            "data": children,
+            "type": "queryset"
+        },
+        {
+            "title": "Family Planning",
+            "url_name": "family_planning",
+            "data": mother,
+            "type": "single"
+        },
+        {
+            "title": "Hospital Admissions",
+            "url_name": "hospital_admissions",
+            "data": mother,
+            "type": "single"
+        },
     ]
 
-    if request.method == "POST":  
-        form_submitted = True  
+    # Process sections correctly
+    processed_sections = []
+    for section in sections:
+        try:
+            section_data = {
+                "title": section["title"],
+                "url": reverse(section["url_name"], args=[mother.identification_number])
+            }
+            processed_sections.append(section_data)
+        except Exception as e:
+            print(f"Error processing section {section['title']}: {e}")
 
-        mother_id = request.POST.get("mother_id", "").strip()
-        mother_name_input = request.POST.get("mother_name", "").strip()
-
-        print(f"Searching for Mother ID: {mother_id}, Name: {mother_name_input}")  # Debug log
-
-        if mother_id or mother_name_input:  
-            try:
-                if mother_id:
-                        mother = MaternalProfile.objects.get(identification_number=mother_id)
-                else:
-                        mother = MaternalProfile.objects.get(name__icontains=mother_name_input)
+    return render(request, "edit_record.html", {
+        "mother": mother,
+        "children": children,
+        "sections": processed_sections
+         
+    })
 
 
-                mother_name = mother.name  # Assign found mother's name
-                print(f"Mother found: {mother_name}")  # Debug log
-            except MaternalProfile.DoesNotExist:
-                error_message = "Mother not found. Check the ID or name."
-                print("Error: Mother not found!")  # Debug log
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# from django.urls import reverse
+
+# def edit_record(request, mother_id):
+    
+#         # Get mother by identification_number
+#         mother = get_object_or_404(MaternalProfile, identification_number=mother_id)
+        
+#         # Get children - using both filters for reliability
+#         children = ChildProfile.objects.filter(
+#         id=mother.identification_number,
+#         mothers_profile=mother
+#     )
+
+#     # Define ALL fields you want to include
+#         child_fields = [
+#         'id', 'name', 'sex', 'date_of_birth', 'gestation_at_birth',
+#         'birth_weight', 'birth_length', 'birth_order', 'date_first_seen',
+#         'place_of_birth', 'health_facility_name', 'birth_notification_no',
+#         'immunization_registration_no', 'child_welfare_clinic_no',
+#         'master_facility_code', 'birth_certificate_no', 'date_of_registration',
+#         'place_of_registration', 'fathers_name', 'fathers_phone',
+#         'mothers_phone', 'guardian_name', 'guardian_phone', 'residence',
+#         'county', 'division', 'sub_county', 'town', 'estate_village',
+#         'postal_address'
+#     ]
+
+
+#         sections = [
+#             {
+#                 "title": "ANC, Childbirth and Postnatal Care",
+#                 "url_name": "anc_childbirth",
+#                 "data": mother,
+#                 "type": "single"
+#             },
+#             {
+#                 "title": "Maternal Profile",
+#                 "url_name": "maternal_profile_form", 
+#                 "data": mother,
+#                 "type": "single"
+#             },
+#             {
+#                 "title": "Child Profile",
+#                 "url_name": "child_profile_form",
+#                 "data": children,
+#                 "type": child_fields
+#             },
+#             {
+#                 "title": "Medical & Surgical History",
+#                 "url_name": "medical_history",
+#                 "data": mother,
+#                 "type": "single"
+#             },
+#             {
+#                 "title": "Child Health Monitoring",
+#                 "url_name": "child_health_monitoring",
+#                 "data": children,
+#                 "type": "queryset"
+#             },
+#             {
+#                 "title": "Health Record of Child",
+#                 "url_name": "health_record",
+#                 "data": children,
+#                 "type": "queryset"
+#             },
+#             {
+#                 "title": "Immunization",
+#                 "url_name": "immunization",
+#                 "data": children,
+#                 "type": "queryset"
+#             },
+#             {
+#                 "title": "Family Planning",
+#                 "url_name": "family_planning",
+#                 "data": mother,
+#                 "type": "single"
+#             },
+#             {
+#                 "title": "Hospital Admissions",
+#                 "url_name": "hospital_admissions",
+#                 "data": mother,
+#                 "type": "single"
+#             },
+#         ]
+
+#         # Prepare data for template
+#         processed_sections = []
+#         for section in sections:
+#             section_data = {
+#             "title": section["title"],
+#             "url": reverse(section["url_name"], args=[mother.identification_number]),
+#         }
+
+#         if section["type"] == "queryset":
+#             section_data["data"] = []
+#             for child in section["data"]:
+#                 child_data = {}
+#                 for field in section.get("fields", []):
+#                     # Handle special cases
+#                     if field == 'sex':
+#                         child_data[field] = child.get_sex_display()
+#                     else:
+#                         value = getattr(child, field, None)
+#                         # Format dates properly
+#                         if value and field.endswith('_date') or field.endswith('_birth'):
+#                             value = value.strftime("%m/%d/%Y")
+#                         child_data[field] = value
+#                 section_data["data"].append(child_data)
+
+#         processed_sections.append(section_data)
+
+#         return render(request, "edit_record.html", {
+#         "mother": mother,
+#         "children": children,
+#         "sections": processed_sections,
+#         "all_child_fields": child_fields  # Pass field list to template
+#         })
+
+
+def maternal_profile_form(request, mother_id=None):
+    if mother_id:
+        # Change from id=mother_id to identification_number=mother_id
+        mother = get_object_or_404(MaternalProfile, identification_number=mother_id)
+    else:
+        mother = None  # No mother exists yet
+
+    if request.method == "POST":
+        form = MaternalProfileForm(request.POST, instance=mother)
+        if form.is_valid():
+            mother = form.save()
+            return redirect('edit_record', mother_id=mother.identification_number)
+    else:
+        form = MaternalProfileForm(instance=mother)
+
+    return render(request, "maternal_profile_form.html", {
+        "form": form, 
+        "mother": mother
+    })
+
+
+
+
+
+
+
+
+
+
+
+def child_profile_form(request, mother_id, child_id=None):  # 🔥 Allow editing existing child records
+    try:
+        # Get the maternal profile using `identification_number`
+        maternal_profile = get_object_or_404(MaternalProfile, identification_number=mother_id)
+
+        # Check if editing an existing child profile
+        if child_id:
+            child_profile = get_object_or_404(ChildProfile, id=child_id, mothers_profile=maternal_profile)  # ✅ Fetch existing child
+            is_new = False
         else:
-            error_message = "Please enter a Mother ID or Name."
+            child_profile = None
+            is_new = True  # New child profile
 
-    return render(request, "update_records.html", {
-        "mother_name": mother_name,
-        "sections": sections,
-        "error_message": error_message if form_submitted else None,
-        "form_submitted": form_submitted
+        if request.method == 'POST':
+            form = ChildProfileForm(request.POST, instance=child_profile)  # ✅ Use instance for updating
+            if form.is_valid():
+                try:
+                    child_profile = form.save(commit=False)
+                    child_profile.mothers_profile = maternal_profile
+                    child_profile.mother_id_number = maternal_profile.identification_number
+                    
+                    # Set default values if needed
+                    if not child_profile.mothers_phone:
+                        child_profile.mothers_phone = maternal_profile.telephone
+                    
+                    child_profile.save()
+                    messages.success(request, 'Child profile saved successfully!')
+                    return redirect('edit_record', mother_id=maternal_profile.identification_number)
+                
+                except Exception as e:
+                    messages.error(request, f'Error saving child profile: {str(e)}')
+            else:
+                messages.error(request, 'Please correct the errors below.')
+        else:
+            # If editing, load existing data; otherwise, load default values
+            initial_data = {
+                'mother_id_number': maternal_profile.identification_number,
+                'mothers_phone': maternal_profile.telephone,
+            }
+            form = ChildProfileForm(instance=child_profile, initial=initial_data)  # ✅ Pre-fill form
+
+        return render(request, 'child_profile_form.html', {
+            'form': form,
+            'mother_profile': maternal_profile,
+            'is_new': is_new,
+            'child_profile': child_profile  # Pass child data to the template
+        })
+
+    except Exception as e:
+        messages.error(request, 'An unexpected error occurred.')
+        return redirect('hospital_dashboard')  # Redirect to a safe page
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def child_profile_form(request, mother_id):
+#     try:
+#         # Use identification_number instead of id
+#         maternal_profile = get_object_or_404(MaternalProfile, identification_number=mother_id)
+        
+#         if request.method == 'POST':
+#             form = ChildProfileForm(request.POST)
+#             if form.is_valid():
+#                 try:
+#                     child_profile = form.save(commit=False)
+#                     child_profile.mothers_profile = maternal_profile
+#                     child_profile.mother_id_number = maternal_profile.identification_number
+                    
+#                     # Set default values if needed
+#                     if not child_profile.mothers_phone:
+#                         child_profile.mothers_phone = maternal_profile.telephone
+                    
+#                     child_profile.save()
+#                     messages.success(request, 'Child profile saved successfully!')
+#                     return redirect('edit_record', mother_id=maternal_profile.identification_number)
+                
+#                 except Exception as e:
+#                     messages.error(request, f'Error saving child profile: {str(e)}')
+#             else:
+#                 messages.error(request, 'Please correct the errors below.')
+#         else:
+#             initial_data = {
+#                 'mother_id_number': maternal_profile.identification_number,
+#                 'mothers_phone': maternal_profile.telephone,
+#             }
+#             form = ChildProfileForm(initial=initial_data)
+
+#         return render(request, 'child_profile_form.html', {
+#             'form': form,
+#             'mother_profile': maternal_profile,
+#             'is_new': True
+#         })
+
+#     except Exception as e:
+#         messages.error(request, 'An unexpected error occurred.')
+#         return redirect('hospital_dashboard')  # Redirect to a safe page
+
+
+
+
+
+
+
+
+
+
+def new_maternal_profile_form(request):
+    if request.method == 'POST':
+        form = MaternalProfileForm(request.POST)
+        if form.is_valid():
+            try:
+                maternal_profile = form.save()  # Changed from save(commit=False) to save()
+                
+                messages.success(request, "Profile created successfully!")
+                return redirect('success_page')  # Explicit simple redirect
+                
+            except ValidationError as e:
+                form.add_error(None, str(e))
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, "System error occurred. Please try again.")
+                logger.error(f"Profile creation error: {e}")
+    else:
+        form = MaternalProfileForm()
+
+    return render(request, 'new_maternal_profile_form.html', {
+        'form': form,
+        'is_new': True,
+        'form_action': reverse('new_maternal_profile_form')  # Explicit form action
+    })
+
+
+def new_child_profile_form(request):
+    if request.method == 'POST':
+        form = ChildProfileForm(request.POST)
+        if form.is_valid():
+            try:
+                # Save the form and get the child instance
+                child_profile = form.save()  # Changed variable name
+                
+                messages.success(request, "Child profile created successfully!")
+                return redirect('success_page')
+                
+            except ValidationError as e:
+                form.add_error(None, str(e))
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, "System error occurred. Please try again.")
+                logger.error(f"Profile creation error: {e}")
+    else:
+        form = ChildProfileForm()
+
+    return render(request, 'new_child_profile_form.html', {
+        'form': form,
+        'is_new': True,
+        'form_action': reverse('new_child_profile_form')
+    })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def update_existing_records(request):
+#     error_message = None
+#     search_results = []
+
+#     if request.method == "POST":
+#         mother_id = request.POST.get("mother_id", "").strip()
+#         mother_name = request.POST.get("mother_name", "").strip()
+#         child_name = request.POST.get("child_name", "").strip()
+
+#         print(f"🔍 Searching for: Mother ID: {mother_id}, Mother Name: {mother_name}, Child Name: {child_name}")
+
+#         # Check for matching records
+#         mother = None
+#         child = None
+
+#         if mother_id:
+#             mother = MaternalProfile.objects.filter(identification_number=mother_id).first()
+#         elif mother_name:
+#             mother = MaternalProfile.objects.filter(name__icontains=mother_name).first()
+
+#         if child_name:
+#             child = ChildProfile.objects.filter(name__icontains=child_name).first()
+
+#         # If a mother is found, use her ID
+#         if mother:
+#             return redirect(reverse("edit_record", args=[mother.identification_number]))
+
+#         # If a child is found but no mother was provided, use the child's linked mother
+#         if child and child.mothers_profile:
+#             return redirect(reverse("edit_record", args=[child.mothers_profile.identification_number]))
+
+#         # No records found
+#         error_message = "❌ No matching records found. Please check the details and try again."
+
+#     return render(request, "update_records.html", {"error_message": error_message})
+
+
+
+
+
+
+def immunization_view(request, mother_id):
+    mother = get_object_or_404(MaternalProfile, identification_number=mother_id)
+    children = ChildProfile.objects.filter(mothers_profile=mother)
+    immunizations = Immunization.objects.filter(child__in=children).order_by('date_administered')
+
+    # Handle form submission
+    if request.method == "POST":
+        form = ImmunizationForm(request.POST)
+        if form.is_valid():
+            immunization = form.save(commit=False)
+            immunization.save()
+            messages.success(request, "Immunization record added successfully.")
+            return redirect('success_page', mother_id=mother.identification_number)  # Refresh page
+    else:
+        form = ImmunizationForm()  # Empty form if GET request
+
+    return render(request, "immunization_form.html", {
+        "mother": mother,
+        "children": children,
+        "immunizations": immunizations,
+        "form": form,  # Pass form to template
     })
