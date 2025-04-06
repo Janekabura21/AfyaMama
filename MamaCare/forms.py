@@ -1,42 +1,76 @@
+import random
 from django import forms
-from .models import  ChildProfile, HealthRecord, MaternalProfile, HospitalUser, MotherChildRecord, Patient, Appointment, PhysicalExamination, PreviousPregnancy
+from .models import  ChildProfile, HealthRecord, MaternalProfile, HospitalUser, MotherChildRecord, PhysicalExamination, PreviousPregnancy
 from .models import PreviousPregnancy
+from django.core.mail import send_mail
 
 
-# Hospital User Form
-class HospitalUserForm(forms.ModelForm):
+# # Hospital User Form
+class HospitalRegistrationForm(forms.ModelForm):
+    password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Repeat Password', widget=forms.PasswordInput)
+
     class Meta:
         model = HospitalUser
-        fields = ['hospital_name', 'code', 'role', 'phone_number', 'email', 'address', 'is_active', 'is_staff', 'is_superuser']
-        widgets = {
-            'role': forms.Select(attrs={'class': 'form-control'}),
-            'hospital_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'code': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'is_superuser': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
+        fields = ['hospital_name', 'code', 'email', 'phone_number']
 
-    def clean_code(self):
-        code = self.cleaned_data.get('code')
-        
-        # If code is provided, check uniqueness
-        if code and HospitalUser.objects.filter(code=code).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError("This hospital code is already in use.")
-        
-        return code
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords do not match")
+        return password2
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])  # Hash password
+        if commit:
+            user.save()
+        return user
     
-    def clean_phone_number(self):
-        phone = self.cleaned_data.get("phone_number")
-        return phone if phone else None 
 
+#     def send_otp(self):
+#         otp = str(random.randint(100000, 999999))  # Generate a random OTP
+#         subject = "Your OTP for Hospital Registration"
+#         message = f"Your OTP is {otp}. Please use it to confirm your registration."
+#         recipient_list = [self.cleaned_data['email']]  # Send OTP to the user's email
 
+#         # Send the email
+#         send_mail(subject, message, 'admin@yourdomain.com', recipient_list)
+#         return otp
 
+# ----------------------------
+# 2. HospitalUser Admin Form
+# ----------------------------
+class HospitalUserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput)
+    password_repeat = forms.CharField(widget=forms.PasswordInput)
+    otp = forms.CharField(max_length=6, required=False)
 
+    class Meta:
+        model = HospitalUser
+        fields = ['email', 'hospital_name', 'code', 'phone_number', 'password']
 
+    def clean_password_repeat(self):
+        password = self.cleaned_data.get("password")
+        password_repeat = self.cleaned_data.get("password_repeat")
+
+        if password != password_repeat:
+            raise forms.ValidationError("Passwords do not match")
+        return password_repeat
+
+    def send_otp(self):
+        otp = str(random.randint(100000, 999999))  # Generate a random OTP
+        subject = "Your OTP for Hospital Registration"
+        message = f"Your OTP is {otp}. Please use it to confirm your registration."
+        recipient_list = [self.cleaned_data['email']]  # Send OTP to the user's email
+
+        # Send the email
+        send_mail(subject, message, 'kaburajane978@gmail.com', recipient_list)
+        return otp
+# 3. User Registration Form (for new users)
+# ----------------------------
 class UserRegistrationForm(forms.ModelForm):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control'}),
@@ -47,7 +81,7 @@ class UserRegistrationForm(forms.ModelForm):
         label="Confirm Password"
     )
     code = forms.CharField(
-        required=False,  # Optional because model can auto-generate it
+        required=False,
         widget=forms.TextInput(attrs={'class': 'form-control'}),
         label="Hospital Code"
     )
@@ -66,34 +100,33 @@ class UserRegistrationForm(forms.ModelForm):
 
         if password and password_confirm and password != password_confirm:
             self.add_error('password_confirm', "Passwords do not match.")
-
         return cleaned_data
 
     def clean_code(self):
         code = self.cleaned_data.get("code")
-        
-        # If code is provided, ensure it's unique
         if code and HospitalUser.objects.filter(code=code).exists():
             raise forms.ValidationError("This hospital code is already in use.")
-
         return code
+    
 
+from django import forms
+from django.contrib.auth import authenticate
 
-
-
-
-
-# Hospital Login Form
 class HospitalLoginForm(forms.Form):
-    email = forms.EmailField(
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-        label="Email"
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
-        label="Password"
-    )
-#  Maternal Profile Form
+    email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get("email")
+        password = cleaned_data.get("password")
+
+        # Check if the email and password combination is valid
+        if email and password:
+            user = authenticate(email=email, password=password)
+            if user is None:
+                raise forms.ValidationError("Invalid email or password.")
+        return cleaned_data
 
 
 
@@ -101,44 +134,21 @@ class MaternalProfileForm(forms.ModelForm):
     class Meta:
         model = MaternalProfile
         fields = '__all__'
+        widgets = {
+            
+    
+    
+            'date_of_birth': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
+            'lmp': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
+            'edd': forms.DateInput(attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'}),
+        }
 
 
 # Patient Form
-class PatientForm(forms.ModelForm):
-    class Meta:
-        model = Patient
-        fields = ["hospital", "name", "date_of_birth", "contact_number", "medical_history"]
-        widgets = {
-            'hospital': forms.Select(attrs={'class': 'form-control'}),
-            'name': forms.TextInput(attrs={'class': 'form-control'}),
-            'date_of_birth': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'contact_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'medical_history': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
+
 
 
 # Appointment Form
-class AppointmentForm(forms.ModelForm):
-    class Meta:
-        model = Appointment
-        fields = ["hospital", "patient", "maternal_profile", "doctor", "date", "status", "attended", "notes"]
-        widgets = {
-            'hospital': forms.Select(attrs={'class': 'form-control'}),
-            'patient': forms.Select(attrs={'class': 'form-control'}),
-            'maternal_profile': forms.Select(attrs={'class': 'form-control'}),
-            'doctor': forms.Select(attrs={'class': 'form-control'}),
-            'date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'attended': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
-
-    def clean_date(self):
-        date = self.cleaned_data.get("date")
-        if date is None:
-            raise forms.ValidationError("Please select a valid date.")
-        return date
-
 
 
 
@@ -217,21 +227,27 @@ from .models import Immunization
 class ImmunizationForm(forms.ModelForm):
     class Meta:
         model = Immunization
-        fields = [
-            'child', 'vaccine_type', 'date_administered', 'next_due_date',
-            'dose_number', 'batch_number', 'administered_by', 'notes'
-        ]
+        exclude = ['child']  # Don't include this in the form UI
         widgets = {
-            'date_administered': forms.DateInput(attrs={'type': 'date'}),
-            'next_due_date': forms.DateInput(attrs={'type': 'date'}),
+            # Date fields
+            'bcg_date_given': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'bcg_next_visit': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            # Add all other date fields similarly
+            
+            # Text inputs
+            'batch_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'administered_by': forms.TextInput(attrs={'class': 'form-control'}),
+            
+            # Textareas
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'aefi_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            
+            # Selects
+            'pcv_injection_site': forms.Select(attrs={'class': 'form-control'}),
+            'rota_reaction': forms.Select(attrs={'class': 'form-control'}),
+            
+            # Checkboxes/radios
+            'bcg_scar_present': forms.RadioSelect(choices=[(True, 'PRESENT'), (False, 'ABSENT')]),
+            'yf_eligible': forms.CheckboxInput(),
+            'aefi_reported': forms.CheckboxInput(),
         }
-
-
-
-
-
-
-
-
-
-

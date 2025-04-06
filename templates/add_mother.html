@@ -1,17 +1,189 @@
-<h2>Mother and Child Records</h2>
+{% extends 'base.html' %}
 
-<input type="text" placeholder="Search Mother or Child">
-<button>Search</button>
+{% block title %}Mother and Child Records{% endblock %}
 
-<ul>
-    <li><a href="{% url 'anc_postnatal_care' %}">ANC, Childbirth and Postnatal Care</a></li>
-    <li><a href="{% url 'maternal_profile' %}">Maternal Profile</a></li>
-    <li><a href="{% url 'medical_history' %}">Medical & Surgical History</a></li>
-    <li><a href="{% url 'previous_pregnancy' %}">Previous Pregnancy</a></li>
-    <li><a href="{% url 'physical_exam' %}">Physical Examination [1st Visit]</a></li>
-    <li><a href="{% url 'child_health' %}">Child Health Monitoring</a></li>
-    <li><a href="{% url 'child_health_record' %}">Health Record of Child</a></li>
-    <li><a href="{% url 'immunization' %}">Immunization</a></li>
-    <li><a href="{% url 'family_planning' %}">Family Planning</a></li>
-    <li><a href="{% url 'hospital_admissions' %}">Hospital Admissions</a></li>
-</ul>
+{% block content %}
+<style>
+    :root {
+        --baby-pink: #ffb6c1;
+        --baby-blue: #89cff0;
+        --light-pink: #ffd1dc;
+        --light-blue: #e6f2ff;
+        --dark-pink: #ff69b4;
+        --dark-blue: #4169e1;
+    }
+
+    .records-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 40px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .page-title {
+        color: var(--dark-pink);
+        text-align: center;
+        margin-bottom: 40px;
+        font-size: 32px;
+        font-weight: 600;
+    }
+
+    .search-container {
+        background: var(--light-blue);
+        padding: 20px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        display: flex;
+        gap: 15px;
+        border: 1px solid var(--light-pink);
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 12px 15px;
+        border: 2px solid var(--light-pink);
+        border-radius: 10px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--dark-pink);
+        box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.2);
+    }
+
+    .search-btn {
+        background: var(--dark-pink);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .search-btn:hover {
+        background: var(--baby-pink);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .records-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .menu-item {
+        background: var(--light-blue);
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        border: 1px solid var(--light-pink);
+    }
+
+    .menu-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background: white;
+    }
+
+    .menu-link {
+        display: block;
+        padding: 20px;
+        color: var(--dark-blue);
+        text-decoration: none;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .menu-link:hover {
+        color: var(--dark-pink);
+    }
+
+    .menu-icon {
+        margin-right: 10px;
+        color: var(--dark-pink);
+    }
+</style>
+
+<div class="records-container">
+    <h1 class="page-title">Mother and Child Records</h1>
+
+    <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search Mother or Child">
+        <button class="search-btn">Search</button>
+    </div>
+
+    <ul class="records-menu">
+        <li class="menu-item">
+            <a href="{% url 'anc_postnatal_care' %}" class="menu-link">
+                <i class="fas fa-baby menu-icon"></i>
+                ANC, Childbirth and Postnatal Care
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'maternal_profile' %}" class="menu-link">
+                <i class="fas fa-female menu-icon"></i>
+                Maternal Profile
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'medical_history' %}" class="menu-link">
+                <i class="fas fa-notes-medical menu-icon"></i>
+                Medical & Surgical History
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'previous_pregnancy' %}" class="menu-link">
+                <i class="fas fa-history menu-icon"></i>
+                Previous Pregnancy
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'physical_exam' %}" class="menu-link">
+                <i class="fas fa-stethoscope menu-icon"></i>
+                Physical Examination [1st Visit]
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'child_health' %}" class="menu-link">
+                <i class="fas fa-child menu-icon"></i>
+                Child Health Monitoring
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'child_health_record' %}" class="menu-link">
+                <i class="fas fa-file-medical menu-icon"></i>
+                Health Record of Child
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'immunization' %}" class="menu-link">
+                <i class="fas fa-syringe menu-icon"></i>
+                Immunization
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'family_planning' %}" class="menu-link">
+                <i class="fas fa-users menu-icon"></i>
+                Family Planning
+            </a>
+        </li>
+        <li class="menu-item">
+            <a href="{% url 'hospital_admissions' %}" class="menu-link">
+                <i class="fas fa-hospital menu-icon"></i>
+                Hospital Admissions
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}

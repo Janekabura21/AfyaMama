@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}
 
 {% block title %}Hospital Dashboard{% endblock %}
@@ -39,64 +38,51 @@
         border-radius: 5px;
     }
 </style>
-</head>
-<body>
 
-    <div class="container">
-        <h2 style="color: red; text-align: center;">
-            Edit Existing Records for {{ mother.name }}
-            {% if children %}
-                and {{ children.0.name }}
-            {% endif %}
-        </h2>
-    
-        <!-- Sections -->
-        <ul class="sections-list">
-            {% for section in sections %}
-                <li><a href="{{ section.url }}">{{ section.title }}</a></li>
-    
-                {% if section.title == "Child Profile" and children %}
-                    <ul>
-                        {% for child in children %}
-                            <!-- <li>
-                                ➤ {{ child.name }} 
-                                <a href="{% url 'child_profile_form' child.mothers_profile.identification_number %}">Child Profile</a>
-                            </li> -->
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-    
-            {% endfor %}
-        </ul>
-    </div>
-{% endblock %} 
+<div class="container">
+    <h2 style="color: red; text-align: center;">
+        Edit Existing Records for {{ mother.name }}
+        {% if children %}
+            and {% for child in children %} {{ child.name }} {% if not forloop.last %}and{% endif %} {% endfor %}
+        {% endif %}
+    </h2>
 
-
-
-
-
-
-
-
-
-
-<!-- <div class="container">
-    <h2>Edit Existing Records for {{ mother.name }} {% if children %} and {{ children.0.name }}{% endif %}</h2>
-
-    <!-- Section Links -->
-    <!-- <ul class="sections-list">
+    <!-- Sections -->
+    <ul class="sections-list">
         {% for section in sections %}
             <li>
                 <a href="{{ section.url }}">{{ section.title }}</a>
             </li>
-        {% empty %}
-            <li>No data available.</li>
+
+            {% if section.title == "Child Profile" and children %}
+                <ul>
+                    {% for child in children %}
+                        <li>
+                            ➤ {{ child.name }}
+                            <a href="{% url 'child_profile_form' child.mothers_profile.identification_number %}">Child Profile</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {% if section.title == "Immunization" %}
+    <ul>
+        {% if children %}
+            {% for child in children %}
+                <li>
+                    ➤ <a href="{% url 'immunization_view' child.id %}">Immunization Records</a>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li>No immunization records found.</li>
+        {% endif %}
+    </ul>
+{% endif %}
+
         {% endfor %}
-    </ul> -->
-<!-- </div> --> -->
-
-
-
-
+    </ul>
+</div>
+ss
+{% endblock %}
 
 

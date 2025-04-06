@@ -40,6 +40,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'debug_toolbar',
     'MamaCare',
+    'Mothers',
+   
+
+   
     
     
 ]
@@ -51,6 +55,8 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
 
 MIDDLEWARE = [
+    'django.contrib.sessions.middleware.SessionMiddleware',  # Make sure this is in the list
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -59,16 +65,28 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    
+    
+
 ]
 
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+CSRF_COOKIE_SECURE = False
+
 ROOT_URLCONF = 'afya_mama.urls'
+
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
          
-         'DIRS': [BASE_DIR / 'templates'],          
-        #  , BASE_DIR / 'Mothers' / 'templates'
+         'DIRS': [
+            str(BASE_DIR / 'templates'),
+            
+        ],
 
         'APP_DIRS': True,
         'OPTIONS': {
@@ -157,3 +175,36 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'ERROR',  # Set this to ERROR or higher to suppress lower level logs like SQL queries
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'ERROR',  # This will suppress SQL query logging
+            'handlers': ['console'],
+        },
+    },
+}
+
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
+# settings.py
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'kaburajane978@gmail.com'
+EMAIL_HOST_PASSWORD = 'gwqu grlj ncsm utie'  # Use an App Password here if 2FA is enabled
+DEFAULT_FROM_EMAIL = 'kaburajane978@gmail.com'

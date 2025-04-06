@@ -1,0 +1,21 @@
+<!-- templates/mothers/register.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mother Registration</title>
+</head>
+<body>
+    <h2>Mother Registration</h2>
+
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Check & Continue</button>
+    </form>
+</body>
+</html>

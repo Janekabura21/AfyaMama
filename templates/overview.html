@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>📊 Hospital Overview Dashboard</h2>
+
+    <!-- Top Stats -->
+    <div class="row mt-4 g-4">
+        <!-- Total Mothers -->
+        <div class="col-md-4">
+            <div class="card text-white bg-primary shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">👶 Total Mothers Registered</h5>
+                    <p class="display-6">{{ registered_mothers }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Children -->
+        <div class="col-md-4">
+            <div class="card text-white bg-success shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🧒 Total Children Registered</h5>
+                    <p class="display-6">{{ registered_children }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Appointments -->
+        <div class="col-md-4">
+            <div class="card text-white bg-dark shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🔢 Total Appointments</h5>
+                    <p class="display-6">{{ total_appointments }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Appointments -->
+        <div class="col-md-4">
+            <div class="card text-white bg-warning shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">🟡 Pending Appointments</h5>
+                    <p class="display-6">{{ pending_appointments }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accepted Appointments -->
+        <div class="col-md-4">
+            <div class="card text-white bg-info shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">✅ Accepted Appointments</h5>
+                    <p class="display-6">{{ accepted_appointments }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rejected Appointments -->
+        <div class="col-md-4">
+            <div class="card text-white bg-danger shadow rounded-4">
+                <div class="card-body text-center">
+                    <h5 class="card-title">❌ Rejected Appointments</h5>
+                    <p class="display-6">{{ rejected_appointments }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Appointments -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow rounded-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">📅 Today's Appointments</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for appt in todays_appointments %}
+                        <li class="list-group-item">
+                            {{ appt.maternal_profile.name }} – {{ appt.date }}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No appointments for today.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Appointments -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow rounded-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">⏰ Upcoming Appointments</h5>
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for appt in upcoming_appointments %}
+                        <li class="list-group-item">
+                            {{ appt.maternal_profile.name }} – {{ appt.date }}
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-muted">No upcoming appointments found.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

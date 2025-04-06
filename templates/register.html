@@ -1,88 +1,86 @@
- 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital Registration</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .container {
-            max-width: 500px;
-            margin-top: 50px;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-left: 6px solid #006B3F; /* Green accent border */
-        }
-        .form-label {
-            font-weight: bold;
-            color: #000000; /* Black text */
-        }
-        .btn-primary {
-            background-color: #C8102E; /* Red */
-            border: none;
-            width: 100%;
-        }
-        .btn-primary:hover {
-            background-color: #A50D26; /* Darker Red */
-        }
-        .error-message {
-            color: #C8102E; /* Red */
-            font-size: 14px;
-        }
-        h2 {
-            color: #000000; /* Black heading */
-            border-bottom: 3px solid #006B3F; /* Green underline */
-            padding-bottom: 5px;
-            text-align: center;
-        }
-        .login-link {
-            color: #006B3F; /* Green */
-            font-weight: bold;
-        }
-    </style>
-
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
 </head>
 <body>
-    <H1>Hospital Registration</H1>
 
+<div class="container mt-5">
+    <h2>Hospital Registration</h2>
 
-    
-    <form method="POST" action="{% url 'register_hospital' %}">
+    <!-- Display messages -->
+    {% if messages %}
+        <div class="alert alert-info">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Registration Form -->
+    <form method="POST" action="{% url 'hospital_register' %}">
         {% csrf_token %}
-        
-        {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label">{{ field.label }}</label>
-                {{ field }}
-                
-                {% if form.is_bound and field.errors %}
-                    <div class="text-danger">
-                        {{ field.errors.as_text }}
-                    </div>
-                {% endif %}
-            </div>
-        {% endfor %}
-    
-        <button type="submit" class="btn btn-primary">Register</button>
+
+        <!-- Email Field -->
+        <div class="mb-3">
+            <label for="id_email" class="form-label">Email Address</label>
+            {{ form.email }}
+        </div>
+
+        <!-- Hospital Name Field -->
+        <div class="mb-3">
+            <label for="id_hospital_name" class="form-label">Hospital Name</label>
+            {{ form.hospital_name }}
+        </div>
+
+        <!-- Hospital Code Field -->
+        <div class="mb-3">
+            <label for="id_code" class="form-label">Hospital Code</label>
+            {{ form.code }}
+        </div>
+
+        <!-- Phone Number Field -->
+        <div class="mb-3">
+            <label for="id_phone_number" class="form-label">Phone Number</label>
+            {{ form.phone_number }}
+        </div>
+
+        <!-- Password Field -->
+        <div class="mb-3">
+            <label for="id_password" class="form-label">Password</label>
+            {{ form.password }}
+        </div>
+
+        <!-- Password Repeat Field -->
+        <div class="mb-3">
+            <label for="id_password_repeat" class="form-label">Repeat Password</label>
+            {{ form.password_repeat }}
+        </div>
+
+        <!-- OTP Field -->
+        <div class="mb-3">
+            <label for="id_otp" class="form-label">OTP</label>
+            {{ form.otp }}
+            {% if not request.session.otp_sent %}
+                <small class="text-muted">OTP will be sent after you enter your email and click "Send OTP".</small>
+            {% endif %}
+        </div>
+
+        <!-- Buttons for Sending OTP and Submitting Registration -->
+        <div class="mb-3">
+            {% if not request.session.otp_sent %}
+                <button type="submit" name="send_notification" class="btn btn-primary">Send OTP</button>
+            {% endif %}
+            {% if request.session.otp_sent %}
+                <button type="submit" name="submit_registration" class="btn btn-success">Submit Registration</button>
+            {% endif %}
+        </div>
     </form>
-    
-    
-    
-    
-    <P>Already registered?<a href="{% url 'login_hospital' %}"> Login</a> </P>
+</div>
 
-
-
-
-
-     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-

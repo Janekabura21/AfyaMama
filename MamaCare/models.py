@@ -6,10 +6,21 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.forms import ValidationError
 import datetime
 
+
+
+# MamaCare/models.py
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+from django.utils import timezone
+# MamaCare/models.py
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db import models
+from django.utils import timezone
+
 class HospitalUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError("The Email field must be set")
+            raise ValueError("Users must have an email address")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -17,57 +28,34 @@ class HospitalUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
         return self.create_user(email, password, **extra_fields)
 
 class HospitalUser(AbstractBaseUser, PermissionsMixin):
-    ROLE_CHOICES = [
-        ('Doctor', 'Doctor'),
-        ('Nurse', 'Nurse'),
-        ('Admin', 'Admin'),
-    ]
-
-    
-    hospital_name = models.CharField(max_length=255)
-    code = models.CharField(max_length=20, unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
-    address = models.TextField()
-    phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True)
     email = models.EmailField(unique=True)
-    date_joined = models.DateTimeField(auto_now_add=True)
+    hospital_name = models.CharField(max_length=255)
+    code = models.CharField(max_length=10)
+    phone_number = models.CharField(max_length=15)
+    address = models.TextField()
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_superuser = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(default=timezone.now)
+    role = models.CharField(max_length=50, blank=True, null=True)
 
-    USERNAME_FIELD = "email"  # Use email for authentication
-    REQUIRED_FIELDS = ["hospital_name", "code", "role", "phone_number"]
+    objects = HospitalUserManager()
 
-    objects = HospitalUserManager() 
-
-
-    def save(self, *args, **kwargs):
-        if not self.code:  # Auto-generate unique code if blank
-            self.code = str(uuid.uuid4())[:10]
-        super().save(*args, **kwargs)
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['hospital_name']
 
     def __str__(self):
-        return f"{self.email} - {self.role} at {self.hospital_name}"
-
-
+        return self.email
 
 
 
     
-class Patient(models.Model):
-    hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    date_of_birth = models.DateField()
-    contact_number = models.CharField(max_length=15)
-    medical_history = models.TextField(blank=True, null=True)
 
-    def __str__(self):
-        return f"{self.name} - {self.hospital.hospital_name}"
 
 def generate_temp_id():
     return "TMP-" + str(uuid.uuid4())[:8]
@@ -84,6 +72,12 @@ class MaternalProfile(models.Model):
         verbose_name="Mother ID/National ID"
     )
     name = models.CharField(max_length=100)
+    hospital = models.ForeignKey(
+        'HospitalUser',
+        on_delete=models.CASCADE,
+        related_name='mothers_profiles',
+        default=1
+    )    
     date_of_birth = models.DateField(null=True, blank=True)
     gravida = models.IntegerField()  # Number of pregnancies
     parity = models.IntegerField()  # Number of births
@@ -161,11 +155,15 @@ class ChildProfile(models.Model):
         help_text="Unique identification number of the mother"
     )
     mothers_profile = models.ForeignKey(
-        'MaternalProfile',
-        on_delete=models.CASCADE,
+        MaternalProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         to_field='identification_number',
-        related_name='children'
+        related_name='children',
+        db_column='mother_id'
     )
+    
     
     # Keep all your existing fields (unchanged)
     name = models.CharField(max_length=100)
@@ -238,46 +236,6 @@ class ChildProfile(models.Model):
         return f"{self.name} (Mother ID: {self.id})"
 
 
-class Appointment(models.Model):
-    STATUS_CHOICES = [
-        ("Pending", "Pending"),
-        ("Accepted", "Accepted"),
-        ("Rejected", "Rejected"),
-        ("Cancelled", "Cancelled"),
-        ("Completed", "Completed"),
-    ]
-
-    hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE, related_name="appointments")
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="appointments")
-    maternal_profile = models.ForeignKey(MaternalProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name="appointments")
-    doctor = models.ForeignKey(HospitalUser, on_delete=models.CASCADE, related_name="doctor_appointments", limit_choices_to={'role': 'Doctor'}, null=True, blank=True)
-    date = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="Pending")
-    attended = models.BooleanField(default=False)
-    notes = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        doctor_name = self.doctor.hospital_name if self.doctor else "Unassigned"
-        return f"Appointment: {self.patient.name} with {doctor_name} on {self.date}"
-
-
-class Doctor(models.Model):
-    user = models.OneToOneField(HospitalUser, on_delete=models.CASCADE, related_name="doctor_profile")
-    specialization = models.CharField(max_length=255)
-    experience_years = models.IntegerField()
-    qualifications = models.TextField()
-    availability = models.CharField(
-        max_length=50,
-        choices=[
-            ("Full-time", "Full-time"),
-            ("Part-time", "Part-time"),
-            ("Consultant", "Consultant"),
-        ],
-        default="Full-time",
-    )
-
-    def __str__(self):
-        return f"Dr. {self.user.hospital_name} - {self.specialization}"
 
 
 
@@ -432,234 +390,165 @@ class Immunization(models.Model):
         ('VIT_A', 'Vitamin A Supplementation'),
         ('DEWORM', 'Deworming'),
     ]
+    REACTION_CHOICES = [
+        ('NONE', 'None'),
+        ('MILD', 'Mild (vomiting)'),
+        ('MODERATE', 'Moderate (diarrhea)'),
+        ('SEVERE', 'Severe (intussusception)'),
+    ]
     
-    child = models.ForeignKey(
+    child = models.OneToOneField(
         ChildProfile, 
         on_delete=models.CASCADE,
         related_name='immunizations',
         to_field='id'
     )
-    vaccine_type = models.CharField(max_length=10, choices=VACCINE_CHOICES)
-    date_administered = models.DateField()
-    next_due_date = models.DateField(null=True, blank=True)
-    dose_number = models.PositiveSmallIntegerField(
-        null=True, 
-        blank=True,
-        validators=[MinValueValidator(1), MaxValueValidator(3)]
-    )
-    dose_amount = models.CharField(max_length=50, null=True, blank=True)
+    # BCG Fields
+    bcg_date_given = models.DateField(null=True, blank=True)
+    bcg_next_visit = models.DateField(null=True, blank=True)
+    bcg_scar_checked = models.DateField(null=True, blank=True)
+    bcg_scar_present = models.BooleanField(null=True, blank=True)
+    bcg_repeated_date = models.DateField(null=True, blank=True)
+    
+    # Polio Fields
+    opv_birth_date = models.DateField(null=True, blank=True)
+    opv_birth_next_date = models.DateField(null=True, blank=True)
+    opv1_date = models.DateField(null=True, blank=True)
+    opv1_next_date = models.DateField(null=True, blank=True)
+    opv2_date = models.DateField(null=True, blank=True)
+    opv2_next_date = models.DateField(null=True, blank=True)
+    opv3_date = models.DateField(null=True, blank=True)
+    opv3_next_date = models.DateField(null=True, blank=True)
+    ipv_date = models.DateField(null=True, blank=True)
+    ipv_next_date = models.DateField(null=True, blank=True)
+    
+    # Pentavalent Fields
+    penta1_date = models.DateField(null=True, blank=True)
+    penta1_next_date = models.DateField(null=True, blank=True)
+    penta2_date = models.DateField(null=True, blank=True)
+    penta2_next_date = models.DateField(null=True, blank=True)
+    penta3_date = models.DateField(null=True, blank=True)
+    penta3_next_date = models.DateField(null=True, blank=True)
+    
+    # PCV Fields
+    pcv1_date = models.DateField(null=True, blank=True)
+    pcv1_next_date = models.DateField(null=True, blank=True)
+    pcv2_date = models.DateField(null=True, blank=True)
+    pcv2_next_date = models.DateField(null=True, blank=True)
+    pcv3_date = models.DateField(null=True, blank=True)
+    pcv3_next_date = models.DateField(null=True, blank=True)
+    pcv_injection_site = models.CharField(max_length=50, null=True, blank=True)
+    
+    # Rotavirus Fields
+    rota1_date = models.DateField(null=True, blank=True)
+    rota1_next_date = models.DateField(null=True, blank=True)
+    rota2_date = models.DateField(null=True, blank=True)
+    rota2_next_date = models.DateField(null=True, blank=True)
+    rota3_date = models.DateField(null=True, blank=True)
+    rota3_next_date = models.DateField(null=True, blank=True)
+    rota_administered_by = models.CharField(max_length=100, null=True, blank=True)
+    rota_reaction = models.CharField(max_length=20, choices=REACTION_CHOICES, null=True, blank=True)
+    
+    # MR Fields
+    mr6_date = models.DateField(null=True, blank=True)
+    mr6_next_date = models.DateField(null=True, blank=True)
+    mr9_date = models.DateField(null=True, blank=True)
+    mr9_next_date = models.DateField(null=True, blank=True)
+    mr18_date = models.DateField(null=True, blank=True)
+    mr18_next_date = models.DateField(null=True, blank=True)
+    
+    # Yellow Fever Fields
+    yf_date = models.DateField(null=True, blank=True)
+    yf_next_date = models.DateField(null=True, blank=True)
+    yf_eligible = models.BooleanField(null=True, blank=True)
+    
+    # Other Vaccines
+    other_vaccine1_name = models.CharField(max_length=100, null=True, blank=True)
+    other_vaccine1_date = models.DateField(null=True, blank=True)
+    other_vaccine2_name = models.CharField(max_length=100, null=True, blank=True)
+    other_vaccine2_date = models.DateField(null=True, blank=True)
+    
+    # Adverse Events
+    aefi_date = models.DateField(null=True, blank=True)
+    aefi_description = models.TextField(null=True, blank=True)
+    aefi_vaccine = models.CharField(max_length=100, null=True, blank=True)
+    aefi_batch_number = models.CharField(max_length=50, null=True, blank=True)
+    aefi_manufacturer = models.CharField(max_length=100, null=True, blank=True)
+    aefi_manufacture_date = models.DateField(null=True, blank=True)
+    aefi_expiry_date = models.DateField(null=True, blank=True)
+    aefi_reported = models.BooleanField(default=False)
+    
+    # Vitamin A
+    vita6_age_given = models.CharField(max_length=50, null=True, blank=True)
+    vita6_date_given = models.DateField(null=True, blank=True)
+    vita6_next_date = models.DateField(null=True, blank=True)
+    vita12_age_given = models.CharField(max_length=50, null=True, blank=True)
+    vita12_date_given = models.DateField(null=True, blank=True)
+    vita12_next_date = models.DateField(null=True, blank=True)
+    vita18_age_given = models.CharField(max_length=50, null=True, blank=True)
+    vita18_date_given = models.DateField(null=True, blank=True)
+    vita18_next_date = models.DateField(null=True, blank=True)
+    vita24_age_given = models.CharField(max_length=50, null=True, blank=True)
+    vita24_date_given = models.DateField(null=True, blank=True)
+    vita24_next_date = models.DateField(null=True, blank=True)
+    vita30_age_given = models.CharField(max_length=50, null=True, blank=True)
+    vita30_date_given = models.DateField(null=True, blank=True)
+    vita30_next_date = models.DateField(null=True, blank=True)
+    vita36_age_given = models.CharField(max_length=50, null=True, blank=True)
+    vita36_date_given = models.DateField(null=True, blank=True)
+    vita36_next_date = models.DateField(null=True, blank=True)
+    
+    # Micronutrient Powders
+    mnp_month6_issued = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MaxValueValidator(10)])
+    mnp_month6_date = models.DateField(null=True, blank=True)
+    mnp_month6_next_date = models.DateField(null=True, blank=True)
+    # Repeat for months 7-23
+    
+    # Deworming
+    deworm12_age_given = models.CharField(max_length=50, null=True, blank=True)
+    deworm12_date_given = models.DateField(null=True, blank=True)
+    deworm12_next_date = models.DateField(null=True, blank=True)
+    deworm12_dosage = models.CharField(max_length=20, null=True, blank=True)
+    deworm18_age_given = models.CharField(max_length=50, null=True, blank=True)
+    deworm18_date_given = models.DateField(null=True, blank=True)
+    deworm18_next_date = models.DateField(null=True, blank=True)
+    deworm18_dosage = models.CharField(max_length=20, null=True, blank=True)
+    deworm24_age_given = models.CharField(max_length=50, null=True, blank=True)
+    deworm24_date_given = models.DateField(null=True, blank=True)
+    deworm24_next_date = models.DateField(null=True, blank=True)
+    deworm24_dosage = models.CharField(max_length=20, null=True, blank=True)
+    deworm30_age_given = models.CharField(max_length=50, null=True, blank=True)
+    deworm30_date_given = models.DateField(null=True, blank=True)
+    deworm30_next_date = models.DateField(null=True, blank=True)
+    deworm30_dosage = models.CharField(max_length=20, null=True, blank=True)
+    
+    # Common fields
     batch_number = models.CharField(max_length=50, null=True, blank=True)
     administered_by = models.CharField(max_length=100, null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
-    
-    # BCG-specific fields
-    scar_checked = models.BooleanField(null=True, blank=True)
-    scar_present = models.BooleanField(null=True, blank=True)
-    date_repeated = models.DateField(null=True, blank=True)
-    
-    # Vitamin A specific
-    vitamin_a_dose = models.CharField(max_length=20, null=True, blank=True, choices=[
-        ('100000IU', '100,000 IU (6 months)'),
-        ('200000IU', '200,000 IU (12+ months)'),
-    ])
-    vitamin_a_age_given = models.CharField(max_length=50, null=True, blank=True)
-    
-    # Deworming specific
-    deworming_medication = models.CharField(max_length=50, null=True, blank=True, default='Albendazole')
-    deworming_dosage = models.CharField(max_length=50, null=True, blank=True, choices=[
-        ('200mg', '200mg (1-2 years)'),
-        ('400mg', '400mg (2+ years)'),
-    ])
-    deworming_age_given = models.CharField(max_length=50, null=True, blank=True)
-    
-    # MR Vaccine specific
-    mr_dose_age = models.CharField(max_length=20, null=True, blank=True, choices=[
-        ('6m', '6 months'),
-        ('9m', '9 months'),
-        ('18m', '18 months'),
-    ])
-    
-    # Yellow Fever specific
-    yf_eligible = models.BooleanField(null=True, blank=True)
-    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     class Meta:
-        ordering = ['date_administered']
-        verbose_name = "Immunization Record"
-        verbose_name_plural = "Immunization Records"
-
-
-    def get_mother_id(self):
-        """Helper method to directly access mother's ID"""
-        return self.child.id
-    
-    def clean(self):
-        """Additional validation"""
-        if not self.child_id:
-            raise ValidationError("Child/Mother ID is required")
+        ordering = ['-created_at']
         
-        # Vaccine-specific validations
-        if self.vaccine_type == 'BCG' and not self.scar_checked:
-            raise ValidationError("Scar check status is required for BCG vaccine")
-    
-    def clean(self):
-        """Validate vaccine-specific requirements"""
-        if self.vaccine_type == 'BCG' and not self.scar_checked:
-            raise ValidationError("Scar check status is required for BCG vaccine")
-        
-        if self.vaccine_type == 'VIT_A' and not self.vitamin_a_dose:
-            raise ValidationError("Vitamin A dose is required")
-            
-        if self.vaccine_type == 'DEWORM' and not self.deworming_dosage:
-            raise ValidationError("Deworming dosage is required")
-    
     def __str__(self):
-        return f"{self.get_vaccine_type_display()} for {self.child.name} on {self.date_administered}"
+        return f"Immunization for {self.child} on {self.created_at}"
+    
 
-class MicronutrientPowder(models.Model):
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='mnps' ,
-        to_field='id' )
-    month = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(6), MaxValueValidator(23)]
-    )
-    sachets_issued = models.PositiveSmallIntegerField(
-        default=10,
-        validators=[MinValueValidator(0), MaxValueValidator(10)]
-    )
-    date_issued = models.DateField()
-    next_visit_date = models.DateField()
-    notes = models.TextField(null=True, blank=True)
-    
-    class Meta:
-        unique_together = ('child', 'month')
-        ordering = ['month']
-    
-    def __str__(self):
-        return f"MNP for {self.child.name} at {self.month} months"
+class Doctor(models.Model):
+    hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    specialization = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
 
-class HIVInfantTesting(models.Model):
-    TEST_TYPES = [
-        ('1st_pcr', '1st DNA PCR'),
-        ('confirm_pcr', 'Confirmatory DNA PCR'),
-        ('2nd_pcr', '2nd DNA PCR (6 months)'),
-        ('3rd_pcr', '3rd DNA PCR (12 months)'),
-        ('antibody_18m', 'Antibody test (18 months)'),
-        ('antibody_24m', 'Antibody test (24 months)'),
-        ('final_antibody', 'Final antibody test (6 weeks post-weaning)'),
-    ]
-    
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='hiv_tests',
-        to_field='id' )
-    test_type = models.CharField(max_length=20, choices=TEST_TYPES)
-    sample_date = models.DateField()
-    result = models.CharField(max_length=20, choices=[
-        ('positive', 'Positive'),
-        ('negative', 'Negative'),
-        ('pending', 'Pending'),
-        ('indeterminate', 'Indeterminate'),
-    ])
-    viral_load = models.PositiveIntegerField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-    
-    class Meta:
-        ordering = ['sample_date']
-    
     def __str__(self):
-        return f"{self.get_test_type_display()} for {self.child.name}"
+        return f"Dr. {self.name} - {self.specialization}"
 
-class ARVProphylaxis(models.Model):
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='arv_prophylaxis')
-    start_date = models.DateField()
-    regimen = models.CharField(max_length=100, default='AZT+NVP')
-    status = models.CharField(max_length=20, choices=[
-        ('continuing', 'Continuing'),
-        ('stopped', 'Stopped (HIV+)'),
-        ('completed', 'Completed'),
-    ])
-    discontinuation_date = models.DateField(null=True, blank=True)
-    discontinuation_reason = models.TextField(null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "ARV Prophylaxis"
-        verbose_name_plural = "ARV Prophylaxes"
-    
-    def __str__(self):
-        return f"ARV for {self.child.name} ({self.get_status_display()})"
-
-class ARTRegimen(models.Model):
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='art_regimens')
-    start_date = models.DateField()
-    regimen = models.CharField(max_length=100)
-    current_dose = models.CharField(max_length=100)
-    last_viral_load = models.PositiveIntegerField(null=True, blank=True)
-    last_vl_date = models.DateField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "ART Regimen"
-        ordering = ['-start_date']
-    
-    def __str__(self):
-        return f"ART for {self.child.name} ({self.regimen})"
-
-class CTXProphylaxis(models.Model):
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='ctx_prophylaxis')
-    start_date = models.DateField()
-    dose = models.CharField(max_length=50)
-    status = models.CharField(max_length=20, choices=[
-        ('active', 'Active'),
-        ('discontinued', 'Discontinued'),
-        ('completed', 'Completed'),
-    ])
-    discontinuation_date = models.DateField(null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "CTX Prophylaxis"
-        verbose_name_plural = "CTX Prophylaxes"
-    
-    def __str__(self):
-        return f"CTX for {self.child.name} ({self.get_status_display()})"
-
-class InfantIPT(models.Model):
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='ipt_records')
-    eligible = models.BooleanField(default=False)
-    start_date = models.DateField(null=True, blank=True)
-    dose = models.CharField(max_length=50, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=[
-        ('active', 'Active'),
-        ('completed', 'Completed'),
-    ], null=True, blank=True)
-    
-    class Meta:
-        verbose_name = "Infant IPT"
-        verbose_name_plural = "Infant IPTs"
-    
-    def __str__(self):
-        return f"IPT for {self.child.name} ({self.get_status_display()})"
-
-class AdverseEvent(models.Model):
-    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE, related_name='adverse_events')
-    immunization = models.ForeignKey(
-        Immunization, 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True,
-        related_name='adverse_events'
-    )
-    date_occurred = models.DateField(default=timezone.now)
-    description = models.TextField()
-    vaccine_type = models.CharField(max_length=50, null=True, blank=True)
-    batch_number = models.CharField(max_length=50, null=True, blank=True)
-    manufacturer = models.CharField(max_length=100, null=True, blank=True)
-    manufacture_date = models.DateField(null=True, blank=True)
-    expiry_date = models.DateField(null=True, blank=True)
-    action_taken = models.TextField(null=True, blank=True)
-    reported_to_authorities = models.BooleanField(default=False)
-    reported_date = models.DateField(null=True, blank=True)
-    
-    class Meta:
-        ordering = ['-date_occurred']
-        verbose_name = "Adverse Event Following Immunization"
-        verbose_name_plural = "Adverse Events Following Immunization"
-    
-    def __str__(self):
-        return f"AEFI for {self.child.name} on {self.date_occurred}"
+class Appointment(models.Model):
+    hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE)
+    maternal_profile = models.ForeignKey('MaternalProfile', on_delete=models.CASCADE)
+    date = models.DateField()
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')])
+    attended = models.BooleanField(null=True, blank=True)
