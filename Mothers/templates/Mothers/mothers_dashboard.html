@@ -1,8 +1,6 @@
-{% extends 'base.html' %}
+<!-- mothers_dashboard.html -->
 
-{% block title %}Hospital Dashboard{% endblock %}
-
-{% block content %}
+{% load static %}
 <style>
     :root {
         --baby-pink: #ffb6c1;
@@ -23,8 +21,7 @@
         background-attachment: fixed;
         background-repeat: no-repeat;
         min-height: 100vh;
-        display: flex;
-        flex-direction: column;
+        position: relative;
     }
 
     body::before {
@@ -46,7 +43,6 @@
         margin: 25px auto;
         background: transparent;
         border-radius: 20px;
-        flex: 1;
     }
 
     .page-title {
@@ -176,33 +172,39 @@
     }
 </style>
 
+
+<link rel="stylesheet" href="{% static 'css/mothers_dashboard.css' %}">
+
 <div class="dashboard-container">
-    <h1 class="page-title">Hospital Dashboard</h1>
+    <h1 class="page-title">Welcome to Your Dashboard</h1>
 
     <div class="dashboard-grid">
         <div class="dashboard-card">
-            <div class="card-icon">📊</div>
-            <h3>Overview Section</h3>
-            <p>Get a comprehensive view of hospital statistics and key metrics.</p>
-            <a href="{% url 'overview_view' %}" class="dashboard-btn">overview_view</a>
-        </div>
-        
-        <div class="dashboard-card">
-            <div class="card-icon">➕</div>
-            <h3>Add Records</h3>
-            <p>Create new records for mothers and children in the system.</p>
-            <a href="{% url 'add_records' %}" class="dashboard-btn">Add Records</a>
-        </div>
-        
-
-        <div class="dashboard-card">
-            <div class="card-icon">👩‍👧</div>
-            <h3>Mother and Child Records</h3>
-            <p>Access and manage all maternal and child health records.</p>
-            <a href="{% url 'mother_child_records' %}" class="dashboard-btn">View Records</a>
+            <div class="card-icon">👩‍⚕️</div>
+            <h3>My Profile</h3>
+            <p>View your maternal profile, personal details and clinic info.</p>
+            <a href="{% url 'mothers:view_profile' %}" class="dashboard-btn">View Profile</a>
         </div>
 
-        
+        <div class="dashboard-card">
+            <div class="card-icon">📅</div>
+            <h3>My Appointments</h3>
+            <p>Check your upcoming and past appointments with your hospital.</p>
+            <a href="{% url 'mothers:dashboard' %}" class="dashboard-btn">View Appointments</a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-icon">🔔</div>
+            <h3>Notifications</h3>
+            <p>Stay updated on your clinic days and your child’s vaccinations.</p>
+            <a href="{% url 'mothers:dashboard' %}" class="dashboard-btn">View Alerts</a>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-icon">👶</div>
+            <h3>Child Records</h3>
+            <p>Access your registered child’s health records and milestones.</p>
+            <a href="{% url 'mothers:dashboard' %}" class="dashboard-btn">Child Records</a>
+        </div>
     </div>
 </div>
-{% endblock %}

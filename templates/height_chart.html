@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ child.name }}'s Height Chart{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: auto;">
+    <h2 style="text-align: center;">{{ child.name }}'s Height Progress Chart</h2>
+
+    <!-- Height Input Form -->
+    <div class="form-container" style="margin-top: 20px; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Age Group -->
+            <div style="margin-bottom: 15px;">
+                <label for="age_group">Age Group:</label>
+                <select name="age_group" id="age_group" required>
+                    <option value="">Select Age Group</option>
+                    <option value="0-1">0-1 year</option>
+                    <option value="1-2">1-2 years</option>
+                    <option value="2-3">2-3 years</option>
+                    <option value="3-4">3-4 years</option>
+                    <option value="4-5">4-5 years</option>
+                </select>
+            </div>
+
+            <!-- Month -->
+            <div style="margin-bottom: 15px;">
+                <label for="month">Month:</label>
+                <select name="month" id="month" required>
+                    <option value="">Select Month</option>
+                    {% for m in months %}
+                        <option value="{{ m }}">{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Height -->
+            <div style="margin-bottom: 15px;">
+                <label for="height_cm">Height (cm):</label>
+                <input type="number" step="0.1" name="height_cm" id="height_cm" required placeholder="e.g. 65.5" min="30" max="150">
+            </div>
+
+            <button type="submit" style="padding: 10px 20px; background-color: green; color: white; border: none; border-radius: 4px;">
+                Add Record
+            </button>
+        </form>
+    </div>
+
+    <!-- Height Chart -->
+    <canvas id="heightChart" width="600" height="300" style="margin-top: 30px;"></canvas>
+
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const ctxHeight = document.getElementById('heightChart').getContext('2d');
+    const heightChart = new Chart(ctxHeight, {
+        type: 'line',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Height (cm)',
+                data: {{ heights|safe }},
+                fill: false,
+                borderColor: 'green',
+                tension: 0.1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    suggestedMin: 30,
+                    suggestedMax: 150
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+{% endblock %}

@@ -65,6 +65,23 @@
                 </ul>
             {% endif %}
 
+            {% if section.title == "Weight Chart" %}
+    <ul>
+        {% if children %}
+            {% for child in children %}
+                <li>
+                    ➤ <a href="{% url 'weight_chart' child.id %}">View {{ child.name }}'s Weight Chart</a>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li>No weight data found.</li>
+        {% endif %}
+    </ul>
+{% endif %}
+
+
+
+
             {% if section.title == "Immunization" %}
     <ul>
         {% if children %}

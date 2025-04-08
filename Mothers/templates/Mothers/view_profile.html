@@ -1,0 +1,13 @@
+<h1>{{ mother.name }}'s Profile</h1>
+<p>ID: {{ mother.identification_number }}</p>
+<p>Phone: {{ mother.phone_number }}</p>
+<p>Number of Children: {{ num_children }}</p>
+
+<h3>Upcoming Appointments:</h3>
+<ul>
+    {% for appointment in upcoming_appointments %}
+        <li>{{ appointment.date }} - {{ appointment.status }}</li>
+    {% empty %}
+        <li>No upcoming appointments.</li>
+    {% endfor %}
+</ul>

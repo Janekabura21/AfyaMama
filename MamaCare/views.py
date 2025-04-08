@@ -2,6 +2,7 @@
 from asyncio import gather
 from datetime import date, timezone
 import datetime
+import json
 import random
 from venv import logger
 from django.forms import ValidationError
@@ -15,7 +16,7 @@ from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegistrationForm,  PreviousPregnancyForm
-from .models import Appointment, ChildProfile,  HospitalUser, Immunization, MaternalProfile, PreviousPregnancy 
+from .models import Appointment, ChildProfile, ChildWeightRecord,  HospitalUser, Immunization, MaternalProfile, PreviousPregnancy 
 from django.db.models import Q
 
 from django.conf import settings
@@ -446,10 +447,10 @@ def edit_record(request, mother_id):
     # Define sections
     sections = [
         {
-            "title": "ANC, Childbirth and Postnatal Care",
-            "url_name": "anc_childbirth",
-            "data": mother,
-            "type": "single"
+        "title": "Child Growth Chart",
+        "url_name": "child_growth_chart",
+        "data": children,  # assuming 'children' is a queryset of ChildProfile
+        "type": "queryset"
         },
         {
             "title": "Maternal Profile",
@@ -788,3 +789,116 @@ def overview_view(request):
     }
 
     return render(request, 'overview.html', context)
+
+from twilio.rest import Client
+
+def send_notification(mother_phone, father_phone, immunization):
+    # Twilio setup (use your own Twilio credentials)
+    client = Client("your_account_sid", "your_auth_token")
+    
+    # Create the message
+    message = f"Reminder: Your child is due for {immunization.bcg_next_visit} immunization. Please visit the clinic."
+    
+    # Send SMS to mother
+    client.messages.create(
+        body=message,
+        from_="your_twilio_phone_number",
+        to=mother_phone
+    )
+    
+    # Send SMS to father
+    client.messages.create(
+        body=message,
+        from_="your_twilio_phone_number",
+        to=father_phone
+    )
+    
+    
+    from datetime import datetime
+import calendar
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import ChildProfile, ChildWeightRecord, ChildHeightRecord
+
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import ChildProfile, ChildWeightRecord, ChildHeightRecord
+import datetime
+import calendar
+
+
+from django.shortcuts import render, get_object_or_404, redirect
+import datetime
+import calendar
+from .models import ChildProfile, ChildWeightRecord, ChildHeightRecord
+from django.shortcuts import render, get_object_or_404, redirect
+import datetime
+import calendar
+import json
+from django.core.serializers.json import DjangoJSONEncoder
+from .models import ChildProfile, ChildWeightRecord, ChildHeightRecord
+
+def child_growth_chart(request, child_id):
+    child = get_object_or_404(ChildProfile, id=child_id)
+
+    if request.method == 'POST':
+        weight_kg = request.POST.get('weight_kg')
+        height_cm = request.POST.get('height_cm')
+        month = request.POST.get('month')
+        age_group = request.POST.get('age_group')
+
+        if weight_kg and month:
+            ChildWeightRecord.objects.create(
+                child=child,
+                weight_kg=weight_kg,
+                month=month,
+                age_group=age_group
+            )
+
+        if height_cm and month:
+            ChildHeightRecord.objects.create(
+                child=child,
+                height_cm=height_cm,
+                month=month,
+                age_group=age_group
+            )
+
+        return redirect('child_growth_chart', child_id=child.id)
+
+    # Get all months from birth to current month
+    birth_date = child.date_of_birth
+    current_date = datetime.datetime.now().date()
+    months_since_birth = (current_date.year - birth_date.year) * 12 + (current_date.month - birth_date.month)
+    
+    all_months = []
+    for i in range(months_since_birth + 1):
+        month_index = (birth_date.month - 1 + i) % 12
+        year_offset = (birth_date.month - 1 + i) // 12
+        month_label = f"{calendar.month_abbr[month_index + 1]} {birth_date.year + year_offset}"
+        all_months.append(month_label)
+
+    # Get all weight and height records ordered by month
+    weight_records = ChildWeightRecord.objects.filter(child=child).order_by('month')
+    height_records = ChildHeightRecord.objects.filter(child=child).order_by('month')
+
+    # Create data arrays with None for missing months
+    weight_data = {record.month: record.weight_kg for record in weight_records}
+    height_data = {record.month: record.height_cm for record in height_records}
+    
+    weights = [weight_data.get(month) for month in all_months]
+    heights = [height_data.get(month) for month in all_months]
+
+    context = {
+        'child': child,
+        'months': all_months,
+        'months_json': json.dumps(all_months, cls=DjangoJSONEncoder),
+        'weights_json': json.dumps(weights, cls=DjangoJSONEncoder),
+        'heights_json': json.dumps(heights, cls=DjangoJSONEncoder),
+        'age_groups': [
+            ("0-1", "0-1 years"),
+            ("1-2", "1-2 years"), 
+            ("2-3", "2-3 years"),
+            ("3-4", "3-4 years"),
+            ("4-5", "4-5 years")
+        ]
+    }
+
+    return render(request, 'child_growth_chart.html', context)

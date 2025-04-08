@@ -208,3 +208,9 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'kaburajane978@gmail.com'
 EMAIL_HOST_PASSWORD = 'gwqu grlj ncsm utie'  # Use an App Password here if 2FA is enabled
 DEFAULT_FROM_EMAIL = 'kaburajane978@gmail.com'
+
+
+# settings.py
+TWILIO_PHONE_NUMBER = '+254795298917'  # Your Twilio phone number
+TWILIO_ACCOUNT_SID = 'ACc681878b229c2fab90ced0c23a3a8313'
+TWILIO_AUTH_TOKEN = '114b289ae4988c08d63dbaed8fe18059'

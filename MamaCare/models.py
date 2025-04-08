@@ -1,5 +1,5 @@
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from django.db import models
 import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -354,6 +354,18 @@ class PhysicalExamination(models.Model):
     couple_testing_done = models.BooleanField(default=False)
     partner_hiv_status = models.CharField(max_length=20, choices=[("Reactive", "Reactive"), ("Non-Reactive", "Non-Reactive"), ("Not Tested", "Not Tested")], default="Not Tested")
 
+
+    @staticmethod
+    def get_parent_phones(immunization):
+        """
+        Fetch the mother's and father's phone numbers associated with the immunization record.
+        """
+        # Get the mother's phone number from MaternalProfile
+        mother_phone = immunization.child.maternalprofile.telephone
+        # Get the father's phone number from ChildProfile
+        father_phone = immunization.child.fathers_phone
+        return mother_phone, father_phone
+    
     def __str__(self):
         return f"Physical Examination - BP: {self.blood_pressure}, Pulse: {self.pulse_rate}"
 
@@ -376,6 +388,29 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import ChildProfile  # Make sure this import works
+
+
+class ImmunizationManager(models.Manager):
+    
+    def due_immunizations(self):
+        # Custom manager method to filter immunizations that are due soon.
+        return self.filter(
+            models.Q(bcg_next_visit__lte=date.today() + timedelta(days=2)) |
+            models.Q(opv1_next_date__lte=date.today() + timedelta(days=2)) |
+            models.Q(penta1_next_date__lte=date.today() + timedelta(days=2)) |
+            models.Q(pcv1_next_date__lte=date.today() + timedelta(days=2)) |
+            models.Q(rota1_next_date__lte=date.today() + timedelta(days=2)) |
+            models.Q(mr6_next_date__lte=date.today() + timedelta(days=2)) |
+            models.Q(yf_next_date__lte=date.today() + timedelta(days=2)) 
+        )
+
+    def get_parent_phones(self, immunization):
+        """
+        Fetch the mother's and father's phone numbers associated with the immunization record.
+        """
+        mother_phone = immunization.child.maternalprofile.telephone
+        father_phone = immunization.child.fathers_phone
+        return mother_phone, father_phone
 
 class Immunization(models.Model):
     VACCINE_CHOICES = [
@@ -552,3 +587,37 @@ class Appointment(models.Model):
     date = models.DateField()
     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')])
     attended = models.BooleanField(null=True, blank=True)
+
+class ChildWeightRecord(models.Model):
+    AGE_GROUP_CHOICES = [
+        ('0-1', '0-1 year'),
+        ('1-2', '1-2 years'),
+        ('2-3', '2-3 years'),
+        ('3-4', '3-4 years'),
+        
+        ('4-5', '4-5 years'),
+    ]
+
+    child = models.ForeignKey(ChildProfile, on_delete=models.CASCADE)
+    age_group = models.CharField(max_length=5, choices=AGE_GROUP_CHOICES)
+    month = models.CharField(max_length=20)
+    weight_kg = models.FloatField()
+
+    def __str__(self):
+        return f"{self.child.name} - {self.age_group} - {self.month}: {self.weight_kg} kg"
+
+
+class ChildHeightRecord(models.Model):
+    child = models.ForeignKey(ChildProfile, related_name='height_records', on_delete=models.CASCADE)
+    height_cm = models.DecimalField(max_digits=5, decimal_places=2)  # Storing height in centimeters with 2 decimal places
+    month = models.CharField(max_length=20)  # Storing the month name (e.g., 'January', 'February')
+    age_group = models.CharField(max_length=20, choices=[
+        ("0-1", "0-1 years"),
+        ("1-2", "1-2 years"),
+        ("2-3", "2-3 years"),
+        ("3-4", "3-4 years"),
+        ("4-5", "4-5 years"),
+    ])
+    
+    def __str__(self):
+        return f"{self.child.name} - {self.height_cm}cm - {self.month}"

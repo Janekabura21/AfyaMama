@@ -27,6 +27,7 @@
         .main-content {
             flex: 1;
             padding: 20px;
+            transition: margin-left 0.3s ease-in-out;
         }
 
         /* Sidebar Styles */
@@ -40,6 +41,10 @@
             transition: left 0.3s ease-in-out;
             padding-top: 20px;
             box-shadow: 2px 0px 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .sidebar.active {
+            left: 0;
         }
         .sidebar a {
             color: white;
@@ -49,6 +54,11 @@
         }
         .sidebar a:hover {
             background-color: #495057;
+        }
+
+        /* When sidebar is active, shift content */
+        .content-shift {
+            margin-left: 250px;
         }
 
         /* Hamburger Icon */
@@ -91,8 +101,9 @@
             <div class="d-flex align-items-center">
                 <span class="menu-icon me-2" onclick="toggleSidebar()">☰</span>
                 <a class="navbar-brand" href="{% url 'hospital_dashboard' %}">AfyaMama</a>
+                {% if 'images/logo.png'|is_static_file %}
                 <img src="{% static 'images/logo.png' %}" alt="AfyaMama Logo" width="30" height="30" class="d-inline-block align-text-top">
-
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -113,15 +124,11 @@
 
     <script>
         function toggleSidebar() {
-            let sidebar = document.getElementById("sidebar");
-            let content = document.getElementById("mainContent");
-            if (sidebar.classList.contains("sidebar-open")) {
-                sidebar.classList.remove("sidebar-open");
-                content.classList.remove("content-move");
-            } else {
-                sidebar.classList.add("sidebar-open");
-                content.classList.add("content-move");
-            }
+            const sidebar = document.getElementById("sidebar");
+            const content = document.getElementById("mainContent");
+            
+            sidebar.classList.toggle("active");
+            content.classList.toggle("content-shift");
         }
     </script>
 
