@@ -2,14 +2,15 @@ from atexit import register
 from django import views
 from django.urls import path
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.views import LogoutView
 
 
 from .views import ( add_new_record, add_patient, add_previous_pregnancy,  add_records, anc_childbirth_view, child_growth_chart, 
                      child_health_monitoring_view, child_profile_form, edit_record, family_planning_view, 
-                    health_record_view,  hospital_admissions_view, hospital_dashboard, hospital_register, immunization_view, 
-                     maternal_profile_form, maternal_profile_view, medical_history_view, mother_child_records, new_child_profile_form, new_maternal_profile_form, overview_view,
-                      search_records, success_page, update_existing_records, 
-                     login_hospital)
+                    health_record_view,  hospital_admissions_view, hospital_dashboard, hospital_register, immunization_view, maternal_monitoring_view, 
+                     maternal_profile_form, maternal_profile_view,  mother_child_records, new_child_profile_form, new_maternal_profile_form, overview_view,
+                      search_records, success_page,  update_existing_records, 
+                     login_hospital, view_records, view_records_search)
 
 urlpatterns = [
     path('register/', hospital_register, name='hospital_register'),
@@ -44,7 +45,6 @@ urlpatterns = [
 
     path('anc-childbirth/<str:mother_id>/', anc_childbirth_view, name='anc_childbirth'),
     path('add_new_record/', maternal_profile_view, name='maternal_profile_form'),
-    path('medical-history/<str:mother_id>/', medical_history_view, name='medical_history'),
     path('child-health-monitoring/<str:mother_id>/', child_health_monitoring_view, name='child_health_monitoring'),
     path('health-record/<str:mother_id>/', health_record_view, name='health_record'),
    
@@ -59,6 +59,14 @@ urlpatterns = [
     path('overview/', overview_view, name='overview_view'),
     # urls.py
     path('growth-chart/<int:child_id>/', child_growth_chart, name='child_growth_chart'),
+    path('maternal-monitoring/<str:mother_id>/', maternal_monitoring_view, name='maternal_monitoring'),
+    path('view-records/', view_records_search, name='view_records_search'),
+
+    path('view-records/<str:mother_id>/', view_records, name='view_records'),
+
+
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+
 
 
 

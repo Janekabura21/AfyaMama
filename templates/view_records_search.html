@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Search for Existing Records</h2>
+
+<!-- Form for Search -->
+<form method="POST">
+    {% csrf_token %}
+    
+    <div class="container">
+    
+        {% if error_message %}
+            <p style="color: red;">{{ error_message }}</p>
+        {% endif %}
+    
+        <!-- Search Fields -->
+        <label for="mother_id">Identification Number:</label>
+        <input type="text" name="mother_id" placeholder="Enter Identification Number" value="{{ request.POST.mother_id }}">
+    
+        <label for="mother_name">Mother's Name:</label>
+        <input type="text" name="mother_name" placeholder="Enter Mother's Name" value="{{ request.POST.mother_name }}">
+    
+        <label for="child_name">Child's Name:</label>
+        <input type="text" name="child_name" placeholder="Enter Child's Name" value="{{ request.POST.child_name }}">
+    
+        <button type="submit">Search</button>
+    </div>
+</form>
+
+<!-- Display Error Message -->
+{% if error_message %}
+    <div class="alert alert-danger mt-3">
+        {{ error_message }}
+    </div>
+{% endif %}
+
+<!-- Display Search Results -->
+{% if search_results %}
+    <div class="mt-4">
+        <h3>Search Results</h3>
+        {% for result in search_results %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Mother: {{ result.mother.name }}</h5>
+                    <small class="text-muted">ID: {{ result.mother.identification_number }}</small>
+                </div>
+                <div class="card-body">
+                    <h6>Children:</h6>
+                    {% if result.children %}
+                        <ul class="list-group">
+                            {% for child in result.children %}
+                                <li class="list-group-item">
+                                    {{ child.name }} - DOB: {{ child.date_of_birth|date:"Y-m-d" }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No children records found</p>
+                    {% endif %}
+                    <a href="{% url 'view_records' mother_id=result.mother.identification_number %}" 
+                       class="btn btn-primary mt-2">
+                        Edit Records
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

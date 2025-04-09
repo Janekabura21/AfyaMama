@@ -5,6 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hospital Registration</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f0f8ff; /* Baby blue background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff0f6; /* Pink background */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .otp-section {
+            display: block; /* Always visible */
+        }
+
+        h2 {
+            color: #ff69b4; /* Hot pink for heading */
+            text-align: center;
+        }
+
+        .form-label {
+            color: #333; /* Darker text color for labels */
+        }
+
+        .btn-primary {
+            background-color: #87ceeb; /* Baby blue button */
+            border-color: #87ceeb;
+        }
+
+        .btn-primary:hover {
+            background-color: #66c2d7;
+            border-color: #66c2d7;
+        }
+
+        .btn-success {
+            background-color: #ff69b4; /* Pink button */
+            border-color: #ff69b4;
+        }
+
+        .btn-success:hover {
+            background-color: #ff3385;
+            border-color: #ff3385;
+        }
+    </style>
 </head>
 <body>
 
@@ -60,23 +110,17 @@
             {{ form.password_repeat }}
         </div>
 
-        <!-- OTP Field -->
-        <div class="mb-3">
+        <!-- OTP Field - Always visible -->
+        <div class="mb-3 otp-section">
             <label for="id_otp" class="form-label">OTP</label>
             {{ form.otp }}
-            {% if not request.session.otp_sent %}
-                <small class="text-muted">OTP will be sent after you enter your email and click "Send OTP".</small>
-            {% endif %}
+            <small class="text-muted">Enter the OTP sent to your email</small>
         </div>
 
-        <!-- Buttons for Sending OTP and Submitting Registration -->
+        <!-- Buttons -->
         <div class="mb-3">
-            {% if not request.session.otp_sent %}
-                <button type="submit" name="send_notification" class="btn btn-primary">Send OTP</button>
-            {% endif %}
-            {% if request.session.otp_sent %}
-                <button type="submit" name="submit_registration" class="btn btn-success">Submit Registration</button>
-            {% endif %}
+            <button type="submit" name="send_otp" class="btn btn-primary">Send OTP</button>
+            <button type="submit" name="submit_registration" class="btn btn-success">Submit Registration</button>
         </div>
     </form>
 </div>

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<h2>Maternal Monitoring for {{ mother.full_name }}</h2>
+
+<hr>
+<h4>Antenatal Visit Form</h4>
+<form method="post">
+    {% csrf_token %}
+    {{ anc_form.as_p }}
+    <button type="submit" name="save_anc">Save Antenatal Visit</button>
+</form>
+
+
+
+<hr>
+<h4>Lab Test Form</h4>
+<form method="post">
+    {% csrf_token %}
+    {{ lab_form.as_p }}
+    <button type="submit" name="save_lab">Save Lab Test</button>
+</form>
+
+<hr>
+<h4>Weight Monitoring Form</h4>
+<form method="post">
+    {% csrf_token %}
+    {{ weight_form.as_p }}
+    <button type="submit" name="save_weight">Save Weight Record</button>
+</form>
+<h4>Next Visit Date</h4>
+<div class="mb-3">
+  {{ antenatal_form.next_visit_date }}
+</div>
+
+<hr>
+<h3>Previous Antenatal Visits</h3>
+<ul>
+    {% for visit in antenatal_visits %}
+        <li>{{ visit.visit_date }} - {{ visit.gestation_weeks }} weeks - BP: {{ visit.bp_systolic }}/{{ visit.bp_diastolic }}</li>
+    {% empty %}
+        <li>No records found.</li>
+    {% endfor %}
+</ul>
+
+<hr>
+<h3>Previous Lab Tests</h3>
+<ul>
+    {% for test in lab_tests %}
+        <li>{{ test.test_date }} - {{ test.test_type }}: {{ test.result }}</li>
+    {% empty %}
+        <li>No records found.</li>
+    {% endfor %}
+</ul>
+
+<hr>
+<h3>Weight Monitoring Chart</h3>
+<canvas id="weightChart" width="400" height="150"></canvas>
+<script>
+  const ctx = document.getElementById('weightChart').getContext('2d');
+  const weightChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: {{ weight_labels|safe }},  // ["8 weeks", "10 weeks", ...]
+      datasets: [{
+        label: 'Weight (kg)',
+        data: {{ weight_data|safe }},    // [58.2, 59.0, ...]
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: false,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 150
+        }
+      }
+    }
+  });
+</script>
+
+{% endblock %}

@@ -581,13 +581,6 @@ class Doctor(models.Model):
     def __str__(self):
         return f"Dr. {self.name} - {self.specialization}"
 
-class Appointment(models.Model):
-    hospital = models.ForeignKey(HospitalUser, on_delete=models.CASCADE)
-    maternal_profile = models.ForeignKey('MaternalProfile', on_delete=models.CASCADE)
-    date = models.DateField()
-    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')])
-    attended = models.BooleanField(null=True, blank=True)
-
 class ChildWeightRecord(models.Model):
     AGE_GROUP_CHOICES = [
         ('0-1', '0-1 year'),
@@ -621,3 +614,79 @@ class ChildHeightRecord(models.Model):
     
     def __str__(self):
         return f"{self.child.name} - {self.height_cm}cm - {self.month}"
+
+
+
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+# ANTENATAL VISIT MODULE
+class AntenatalVisit(models.Model):
+    mother = models.ForeignKey('MaternalProfile', on_delete=models.CASCADE)
+    visit_date = models.DateField()
+    gestation_weeks = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(40)]
+    )
+    bp_systolic = models.IntegerField(null=True, blank=True)  # e.g., 120
+    bp_diastolic = models.IntegerField(null=True, blank=True)  # e.g., 80
+    hb_level = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)  # e.g., 10.9
+    fundal_height = models.IntegerField(null=True, blank=True)  # in cm
+    presentation_choices = [('C', 'Cephalic'), ('B', 'Breech'), ('O', 'Other')]
+    fetal_presentation = models.CharField(max_length=1, choices=presentation_choices, blank=True)
+    next_visit_date = models.DateField()
+    icd10_code = models.CharField(max_length=10, default='Z34.00')  # Default: Normal pregnancy
+    cpt_code = models.CharField(max_length=10, default='59400')    # Routine ANC
+
+    def __str__(self):
+        return f"ANC Visit {self.id} for {self.Mother} (ICD-10: {self.icd10_code})"
+
+# LAB TEST MODULE
+class LabTest(models.Model):
+    TEST_TYPES = [
+        ('HIV', 'HIV'),
+        ('Syphilis', 'Syphilis'),
+        ('Hepatitis B', 'Hepatitis B'),
+        ('Hb', 'Hemoglobin'),
+        ('Blood Group', 'Blood Group'),
+        ('RBS', 'Random Blood Sugar'),
+    ]
+    RESULTS = [
+        ('R', 'Reactive'),
+        ('NR', 'Non-Reactive'),
+        ('INC', 'Inconclusive'),
+        ('NT', 'Not Tested'),
+    ]
+
+    mother = models.ForeignKey('MaternalProfile', on_delete=models.CASCADE)
+    test_type = models.CharField(max_length=20, choices=TEST_TYPES)
+    result = models.CharField(max_length=3, choices=RESULTS)
+    test_date = models.DateField()
+    loinc_code = models.CharField(max_length=10, blank=True)  # e.g., "4544-3" for Hb
+    snomed_code = models.CharField(max_length=20, blank=True)  # e.g., "271737000"
+
+    def save(self, *args, **kwargs):
+        # Auto-assign LOINC/SNOMED codes based on test type
+        if self.test_type == 'Hb':
+            self.loinc_code = '4544-3'
+            self.snomed_code = '271737000' if float(self.result) < 11 else '165816005'
+        elif self.test_type == 'HIV':
+            self.loinc_code = '75622-1'
+            self.snomed_code = '414285001' if self.result == 'NR' else '86406008'
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.test_type} Test ({self.loinc_code})"
+
+# WEIGHT MONITORING MODULE
+class WeightRecord(models.Model):
+    mother = models.ForeignKey('MaternalProfile', on_delete=models.CASCADE)
+    weight_kg = models.DecimalField(
+        max_digits=5, decimal_places=2,
+        validators=[MaxValueValidator(150)]
+    )    
+    record_date = models.DateField()
+    gestation_weeks = models.IntegerField(
+        validators=[MaxValueValidator(40)]
+    )
+    def __str__(self):
+        return f"{self.weight_kg} kg at {self.gestation_weeks} weeks"

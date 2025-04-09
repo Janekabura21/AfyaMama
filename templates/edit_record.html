@@ -57,10 +57,7 @@
             {% if section.title == "Child Profile" and children %}
                 <ul>
                     {% for child in children %}
-                        <li>
-                            ➤ {{ child.name }}
-                            <a href="{% url 'child_profile_form' child.mothers_profile.identification_number %}">Child Profile</a>
-                        </li>
+                        
                     {% endfor %}
                 </ul>
             {% endif %}
@@ -69,9 +66,7 @@
     <ul>
         {% if children %}
             {% for child in children %}
-                <li>
-                    ➤ <a href="{% url 'weight_chart' child.id %}">View {{ child.name }}'s Weight Chart</a>
-                </li>
+                
             {% endfor %}
         {% else %}
             <li>No weight data found.</li>
@@ -86,9 +81,7 @@
     <ul>
         {% if children %}
             {% for child in children %}
-                <li>
-                    ➤ <a href="{% url 'immunization_view' child.id %}">Immunization Records</a>
-                </li>
+                
             {% endfor %}
         {% else %}
             <li>No immunization records found.</li>

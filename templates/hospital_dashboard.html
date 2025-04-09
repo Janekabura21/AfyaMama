@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 
 {% block title %}Hospital Dashboard{% endblock %}
+<h2 style="color: #fff; font-size: 22px; text-align: center; margin-top: -10px;">
+    Welcome, {{ hospital.name }}
+</h2>
 
 {% block content %}
 <style>
@@ -186,7 +189,7 @@
             <p>Get a comprehensive view of hospital statistics and key metrics.</p>
             <a href="{% url 'overview_view' %}" class="dashboard-btn">overview_view</a>
         </div>
-        
+
         <div class="dashboard-card">
             <div class="card-icon">➕</div>
             <h3>Add Records</h3>
@@ -199,7 +202,7 @@
             <div class="card-icon">👩‍👧</div>
             <h3>Mother and Child Records</h3>
             <p>Access and manage all maternal and child health records.</p>
-            <a href="{% url 'mother_child_records' %}" class="dashboard-btn">View Records</a>
+            <a href="{% url 'view_records'  mother_id=mother.identification_number %}" class="dashboard-btn">View Records</a>
         </div>
 
         

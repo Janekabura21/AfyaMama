@@ -52,7 +52,9 @@ AUTH_USER_MODEL = 'MamaCare.HospitalUser'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/login/'
+
+LOGOUT_REDIRECT_URL = 'login'
+
 
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',  # Make sure this is in the list
@@ -214,3 +216,26 @@ DEFAULT_FROM_EMAIL = 'kaburajane978@gmail.com'
 TWILIO_PHONE_NUMBER = '+254795298917'  # Your Twilio phone number
 TWILIO_ACCOUNT_SID = 'ACc681878b229c2fab90ced0c23a3a8313'
 TWILIO_AUTH_TOKEN = '114b289ae4988c08d63dbaed8fe18059'
+
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+
+
+# sms_config.py
+import africastalking
+
+# Sandbox credentials (get from dashboard)
+username = "sandbox"  # Always 'sandbox' when testing
+api_key = "atsk_2605b7781716319dda1e4915850e43b73e35a994a14c51b7d2627e9375170a2b922dd820"  # Paste your sandbox API key here
+
+# Initialize Africa's Talking
+africastalking.initialize(username, api_key)
+
+# SMS service
+sms = africastalking.SMS

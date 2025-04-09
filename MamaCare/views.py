@@ -1,6 +1,6 @@
 # Create your views here.
 from asyncio import gather
-from datetime import date, timezone
+from datetime import date, time, timezone
 import datetime
 import json
 import random
@@ -11,13 +11,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import NoReverseMatch, reverse
 from django.utils.timezone import now
 
-from .forms import   ChildProfileForm, HealthRecordForm, HospitalLoginForm, HospitalRegistrationForm, HospitalUserForm, ImmunizationForm, MaternalProfileForm,  PhysicalExaminationForm,  RecordForm
+from .forms import   ChildProfileForm, HealthRecordForm, HospitalLoginForm, HospitalRegistrationForm, HospitalUserForm, ImmunizationForm, MaternalProfileForm,  PhysicalExaminationForm,  RecordForm, SearchForm
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from .forms import UserRegistrationForm,  PreviousPregnancyForm
-from .models import Appointment, ChildProfile, ChildWeightRecord,  HospitalUser, Immunization, MaternalProfile, PreviousPregnancy 
+from .models import  AntenatalVisit, ChildProfile, ChildWeightRecord,  HospitalUser, Immunization, LabTest, MaternalProfile, PreviousPregnancy 
 from django.db.models import Q
+
+
+
+
+
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -34,7 +39,6 @@ otp_valid = False
 sent_otp = None  # Store the OTP temporarily, this should be in session or cache for production.
 
 
-
 def hospital_register(request):
     if request.method == "POST":
         form = HospitalUserForm(request.POST)
@@ -42,53 +46,69 @@ def hospital_register(request):
         if form.is_valid():
             # If the "Send OTP" button is clicked
             if 'send_notification' in request.POST:
-                # Access the email directly from cleaned_data
                 email = form.cleaned_data.get("email")
-
-                # Send OTP
-                sent_otp = send_otp(email)  # Call the send_otp function
-                request.session['otp_sent'] = sent_otp  # Store OTP in the session
-                messages.info(request, "OTP sent to your email address.")
-                return redirect('hospital_register')  # Reload the page to enter OTP
+                
+                # Generate and store OTP with timestamp
+                otp = str(random.randint(100000, 999999))
+                request.session['otp'] = otp
+                request.session['otp_email'] = email
+                request.session['otp_time'] = time.time()
+                
+                # Send OTP email
+                try:
+                    send_mail(
+                        'Your OTP for Hospital Registration',
+                        f'Your verification code is: {otp}\nThis code expires in 5 minutes.',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                    )
+                    messages.success(request, "OTP sent to your email address!")
+                except Exception as e:
+                    messages.error(request, f"Failed to send OTP: {str(e)}")
+                    return redirect('hospital_register')
+                
+                return redirect('hospital_register')
 
             # If the "Submit Registration" button is clicked
             elif 'submit_registration' in request.POST:
                 # Verify OTP
-                otp = form.cleaned_data.get("otp")
-                sent_otp = request.session.get('otp_sent', None)
-
-                if sent_otp and otp == sent_otp:
-                    # OTP is valid, now create the hospital user
+                user_otp = form.cleaned_data.get("otp")
+                stored_otp = request.session.get('otp')
+                otp_time = request.session.get('otp_time')
+                
+                # Check if OTP exists and is not expired (5 minutes)
+                if not stored_otp or not otp_time:
+                    messages.error(request, "Please request an OTP first")
+                elif time.time() - otp_time > 300:  # 5 minutes expiry
+                    messages.error(request, "OTP has expired. Please request a new one.")
+                elif user_otp != stored_otp:
+                    messages.error(request, "Invalid OTP. Please try again.")
+                else:
+                    # OTP is valid - complete registration
                     hospital_user = form.save(commit=False)
                     hospital_user.set_password(form.cleaned_data["password"])
                     hospital_user.save()
-
+                    
+                    # Clean up session
+                    del request.session['otp']
+                    del request.session['otp_email']
+                    del request.session['otp_time']
+                    
                     # Log the user in
                     login(request, hospital_user)
                     messages.success(request, "Registration successful!")
-                    return redirect('hospital_dashboard')  # Redirect to the hospital dashboard
-                else:
-                    messages.error(request, "Invalid OTP. Please try again.")
+                    return redirect('hospital_dashboard')
         else:
-            messages.error(request, "There was an error with the registration form.")
+            # Form is invalid
+            messages.error(request, "Please correct the errors below.")
     else:
         form = HospitalUserForm()
 
-    return render(request, 'register.html', {'form': form})
-
-
-# Helper function to send OTP
-def send_otp(email):
-    otp = str(random.randint(100000, 999999))  # Generate a 6-digit OTP
-    subject = "Your OTP for Hospital Registration"
-    message = f"Your OTP is {otp}. Please use it to confirm your registration."
-    from_email = 'your_email@gmail.com'  # Replace with a valid email address
-    recipient_list = [email]
-
-    # Send the OTP email
-    send_mail(subject, message, from_email, recipient_list)
-
-    return otp
+    return render(request, 'register.html', {
+        'form': form,
+        'otp_sent': 'otp' in request.session
+    })
 
 
 def login_hospital(request):
@@ -113,6 +133,8 @@ def login_hospital(request):
 @login_required
 def hospital_dashboard(request):
     # hospital = request.user
+  
+
     hospital = get_object_or_404(HospitalUser, email=request.user.email)  # Get the logged-in hospital user
      # Get hospital appointments
     
@@ -220,7 +242,7 @@ def search_records(request):
 
 def mother_child_records(request):
     sections = [
-        {"title": "ANC, Childbirth and Postnatal Care", "url": "anc_childbirth"},
+        {"title": "Child Growth Chart", "url": "child_growth_chart"},
         {"title": "Maternal Profile", "url": "maternal_profile"},
         {"title": "Medical & Surgical History", "url": "medical_history"},
         {"title": "Previous Pregnancy", "url": "previous_pregnancy"},
@@ -470,18 +492,7 @@ def edit_record(request, mother_id):
             "data": mother,
             "type": "single"
         },
-        {
-            "title": "Child Health Monitoring",
-            "url_name": "child_health_monitoring",
-            "data": children,
-            "type": "queryset"
-        },
-        {
-            "title": "Health Record of Child",
-            "url_name": "health_record",
-            "data": children,
-            "type": "queryset"
-        },
+        
         {
             "title": "Immunization",
             "url_name": "immunization_view",
@@ -489,8 +500,8 @@ def edit_record(request, mother_id):
             "type": "queryset"
         },
         {
-            "title": "Family Planning",
-            "url_name": "family_planning",
+            "title": "Antenatal, Lab & Weight Monitoring",
+             "url_name": "maternal_monitoring",
             "data": mother,
             "type": "single"
         },
@@ -646,9 +657,6 @@ def child_profile_form(request, mother_id, child_id=None):
 
 
 
-
-
-
 def new_maternal_profile_form(request):
     if request.method == 'POST':
         form = MaternalProfileForm(request.POST)
@@ -758,71 +766,27 @@ from django.utils import timezone
 
 @login_required
 def overview_view(request):
-    hospital_user = request.user
+    # Get the hospital user
+    hospital_user = HospitalUser.objects.get(email=request.user.email)
+    print(f'Fetching data for hospital: {hospital_user.email}')
 
-    registered_mothers = MaternalProfile.objects.filter(hospital=hospital_user).count()
-    registered_children = ChildProfile.objects.filter(mothers_profile__hospital=hospital_user).count()
+    # Count the maternal and child profiles linked to the hospital
+    maternal_count = MaternalProfile.objects.filter(hospital=hospital_user).count()
+    child_count = ChildProfile.objects.filter(mothers_profile__hospital=hospital_user).count()
 
-    total_appointments = Appointment.objects.filter(hospital=hospital_user).count()
-    pending_appointments = Appointment.objects.filter(hospital=hospital_user, status='pending').count()
-    accepted_appointments = Appointment.objects.filter(hospital=hospital_user, status='accepted').count()
-    rejected_appointments = Appointment.objects.filter(hospital=hospital_user, status='rejected').count()
+    # Log the counts for debugging
+    print(f'Maternal count: {maternal_count}')
+    print(f'Child count: {child_count}')
 
-    today = timezone.now().date()
-    todays_appointments = Appointment.objects.filter(hospital=hospital_user, date=today)
-
-    upcoming_appointments = Appointment.objects.filter(
-        hospital=hospital_user,
-        date__gt=today,
-        status='accepted'
-    ).order_by('date')[:5]
-
+    # Pass the counts to the template context
     context = {
-        'registered_mothers': registered_mothers,
-        'registered_children': registered_children,
-        'total_appointments': total_appointments,
-        'pending_appointments': pending_appointments,
-        'accepted_appointments': accepted_appointments,
-        'rejected_appointments': rejected_appointments,
-        'todays_appointments': todays_appointments,
-        'upcoming_appointments': upcoming_appointments,
+        'registered_mothers': maternal_count,
+        'registered_children': child_count,
     }
 
     return render(request, 'overview.html', context)
 
-from twilio.rest import Client
 
-def send_notification(mother_phone, father_phone, immunization):
-    # Twilio setup (use your own Twilio credentials)
-    client = Client("your_account_sid", "your_auth_token")
-    
-    # Create the message
-    message = f"Reminder: Your child is due for {immunization.bcg_next_visit} immunization. Please visit the clinic."
-    
-    # Send SMS to mother
-    client.messages.create(
-        body=message,
-        from_="your_twilio_phone_number",
-        to=mother_phone
-    )
-    
-    # Send SMS to father
-    client.messages.create(
-        body=message,
-        from_="your_twilio_phone_number",
-        to=father_phone
-    )
-    
-    
-    from datetime import datetime
-import calendar
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import ChildProfile, ChildWeightRecord, ChildHeightRecord
-
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import ChildProfile, ChildWeightRecord, ChildHeightRecord
-import datetime
-import calendar
 
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -902,3 +866,150 @@ def child_growth_chart(request, child_id):
     }
 
     return render(request, 'child_growth_chart.html', context)
+
+
+
+
+
+
+from django.shortcuts import render, redirect
+from .forms import AntenatalVisitForm, LabTestForm, WeightRecordForm
+from .models import WeightRecord
+from django.contrib import messages
+
+def maternal_monitoring_view(request, mother_id):
+    mother = get_object_or_404(MaternalProfile, identification_number=mother_id)
+
+    antenatal_visits = AntenatalVisit.objects.filter(mother=mother).order_by('-visit_date')
+    lab_tests = LabTest.objects.filter(mother=mother).order_by('-test_date')
+    weight_records = WeightRecord.objects.filter(mother=mother).order_by('gestation_weeks')
+
+    anc_form = AntenatalVisitForm()
+    lab_form = LabTestForm()
+    weight_form = WeightRecordForm()
+
+    if request.method == 'POST':
+        if 'save_anc' in request.POST:
+            anc_form = AntenatalVisitForm(request.POST)
+            if anc_form.is_valid():
+                anc = anc_form.save(commit=False)
+                anc.mother = mother
+                anc.save()
+                return redirect('maternal_monitoring', mother_id=mother_id)
+
+        elif 'save_lab' in request.POST:
+            lab_form = LabTestForm(request.POST)
+            if lab_form.is_valid():
+                lab = lab_form.save(commit=False)
+                lab.mother = mother
+                lab.save()
+                return redirect('maternal_monitoring', mother_id=mother_id)
+
+        elif 'save_weight' in request.POST:
+            weight_form = WeightRecordForm(request.POST)
+            if weight_form.is_valid():
+                weight = weight_form.save(commit=False)
+                weight.mother = mother
+                weight.save()
+                return redirect('maternal_monitoring', mother_id=mother_id)
+
+    return render(request, 'maternal_monitoring.html', {
+        'mother': mother,
+        'antenatal_visits': antenatal_visits,
+        'lab_tests': lab_tests,
+        'weight_records': weight_records,
+        'anc_form': anc_form,
+        'lab_form': lab_form,
+        'weight_form': weight_form,
+    })
+
+
+from django.shortcuts import render, get_object_or_404
+from Mothers.models import MaternalProfile, ChildProfile
+
+from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
+from .models import MaternalProfile, ChildProfile  # adjust to your app structure
+
+
+def view_records_search(request):
+    error_message = None
+
+    if request.method == "POST":
+        mother_id = request.POST.get("mother_id", "").strip()
+        mother_name = request.POST.get("mother_name", "").strip()
+        child_name = request.POST.get("child_name", "").strip()
+
+        # Enforce mandatory entry
+        if not mother_name and not child_name:
+            error_message = "⚠️ Please enter at least the mother's name or child's name."
+            return render(request, "view_records_search.html", {"error_message": error_message})
+
+        # Search logic
+        mother = None
+        child = None
+
+        if mother_id:
+            mother = MaternalProfile.objects.filter(identification_number=mother_id).first()
+            if mother:
+                return redirect("view_records", mother_id=mother.identification_number)
+
+        if not mother and mother_name:
+            mothers = MaternalProfile.objects.filter(name__icontains=mother_name)
+            if mothers.count() == 1:
+                mother = mothers.first()
+
+        if child_name:
+            child = ChildProfile.objects.filter(
+                name__icontains=child_name,
+                mothers_profile__isnull=False
+            ).first()
+
+        # Determine redirect
+        if mother:
+            return redirect("view_records", mother_id=mother.identification_number)
+        if child and child.mothers_profile:
+            return redirect("view_records", mother_id=child.mothers_profile.identification_number)
+
+        error_message = "❌ No matching records found. Please check the details and try again."
+
+    return render(request, "view_records_search.html", {"error_message": error_message})
+
+def view_records(request, mother_id):
+    try:
+        mother = get_object_or_404(MaternalProfile, identification_number=mother_id)
+        children = ChildProfile.objects.filter(mothers_profile=mother)
+        
+        # GET parameters for additional filtering
+        child_name = request.GET.get('child_name', '')
+        if child_name:
+            children = children.filter(name__icontains=child_name)
+
+        sections = [
+            {"title": "Child Growth Chart", "url_name": "child_growth_chart"},
+            {"title": "Maternal Profile", "url_name": "maternal_profile_form"},
+            {"title": "Child Profile", "url_name": "child_profile_form"},
+            {"title": "Immunization", "url_name": "immunization_view"},
+            {"title": "Antenatal Monitoring", "url_name": "maternal_monitoring"},
+        ]
+
+        processed_sections = []
+        for section in sections:
+            try:
+                processed_sections.append({
+                    "title": section["title"],
+                    "url": reverse(section["url_name"], args=[mother.identification_number])
+                })
+            except Exception as e:
+                print(f"Section error: {e}")
+
+        return render(request, "view_records.html", {
+            "mother": mother,
+            "children": children,
+            "sections": processed_sections,
+            "mother_id": mother.identification_number  # Explicitly pass for template
+        })
+
+    except Exception as e:
+        print(f"Error in view_records: {e}")
+        return render(request, "view_records.html", {"error": str(e)})

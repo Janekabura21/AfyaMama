@@ -1,137 +1,236 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AfyaMama</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    {% load static %}
-    <style>
-        /* Global Styles */
-        body, html {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
+{% extends 'base.html' %}
 
-        /* Background Image */
-        body {
-            background: url('{% static "images/mother_child.jpg" %}') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-            display: flex;
-            flex-direction: column;
-        }
+{% block title %}{{ child.name }}'s Growth Chart{% endblock %}
 
-        /* Main Content Area */
-        .main-content {
-            flex: 1;
-            padding: 20px;
-            transition: margin-left 0.3s ease-in-out;
-        }
+{% block content %}
+<div class="container" style="max-width: 700px; margin: auto; font-family: 'Arial', sans-serif;">
+    <h2 style="text-align: center; color: #333; margin-bottom: 30px;">{{ child.name }}'s Growth Progress</h2>
 
-        /* Sidebar Styles */
-        .sidebar {
-            width: 250px;
-            background-color: rgba(52, 58, 64, 0.95);
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: -250px;
-            transition: left 0.3s ease-in-out;
-            padding-top: 20px;
-            box-shadow: 2px 0px 10px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-        .sidebar.active {
-            left: 0;
-        }
-        .sidebar a {
-            color: white;
-            text-decoration: none;
-            display: block;
-            padding: 12px 20px;
-        }
-        .sidebar a:hover {
-            background-color: #495057;
-        }
+    <!-- Data Entry Form -->
+    <div class="form-container" style="margin-top: 20px; padding: 20px; border: 1px solid #a8d8f0; border-radius: 8px; background-color: #f0f9ff;">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Age Group -->
+            <div style="margin-bottom: 15px;">
+                <label for="age_group" style="color: #4a6fa5; font-weight: bold;">Age Group:</label>
+                <select name="age_group" id="age_group" required style="padding: 8px; width: 100%; border: 1px solid #a8d8f0; border-radius: 4px; background-color: white;">
+                    <option value="">Select Age Group</option>
+                    {% for value, label in age_groups %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        /* When sidebar is active, shift content */
-        .content-shift {
-            margin-left: 250px;
-        }
+            <!-- Month -->
+            <div style="margin-bottom: 15px;">
+                <label for="month" style="color: #4a6fa5; font-weight: bold;">Month:</label>
+                <select name="month" id="month" required style="padding: 8px; width: 100%; border: 1px solid #a8d8f0; border-radius: 4px; background-color: white;">
+                    <option value="">Select Month</option>
+                    {% for m in months %}
+                        <option value="{{ m }}">{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-        /* Hamburger Icon */
-        .menu-icon {
-            font-size: 30px;
-            cursor: pointer;
-            color: white;
-            margin-left: 10px;
-        }
+            <!-- Weight -->
+            <div style="margin-bottom: 15px;">
+                <label for="weight_kg" style="color: #4a6fa5; font-weight: bold;">Weight (kg):</label>
+                <input type="number" step="0.1" name="weight_kg" id="weight_kg" required 
+                       placeholder="e.g. 6.5" min="2" max="25" style="padding: 8px; width: 100%; border: 1px solid #a8d8f0; border-radius: 4px;">
+            </div>
 
-        /* Footer Styles */
-        .footer {
-            background-color: rgba(52, 58, 64, 0.95);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            width: 100%;
-        }
-        .footer a {
-            color: #FFB6C1;
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
+            <!-- Height -->
+            <div style="margin-bottom: 15px;">
+                <label for="height_cm" style="color: #4a6fa5; font-weight: bold;">Height (cm):</label>
+                <input type="number" step="0.1" name="height_cm" id="height_cm" required 
+                       placeholder="e.g. 65" min="50" max="150" style="padding: 8px; width: 100%; border: 1px solid #a8d8f0; border-radius: 4px;">
+            </div>
 
-    <!-- Sidebar Navigation -->
-    <div class="sidebar" id="sidebar">
-        <a href="{% url 'hospital_dashboard' %}">🏠 Dashboard</a>
-        <a href="{% url 'add_patient' %}">➕ Add Patient</a>
-        <a href="{% url 'logout_hospital' %}" class="text-danger">🚪 Logout</a>
+            <button type="submit" style="padding: 12px 24px; background-color: #ff9bb3; color: white; 
+                    border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background-color 0.3s;">
+                Add Record
+            </button>
+        </form>
     </div>
 
-    <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <div class="d-flex align-items-center">
-                <span class="menu-icon me-2" onclick="toggleSidebar()">☰</span>
-                <a class="navbar-brand" href="{% url 'hospital_dashboard' %}">AfyaMama</a>
-                {% if 'images/logo.png'|is_static_file %}
-                <img src="{% static 'images/logo.png' %}" alt="AfyaMama Logo" width="30" height="30" class="d-inline-block align-text-top">
-                {% endif %}
+    <!-- Charts Section -->
+    <div style="margin-top: 40px;">
+        <div style="margin-bottom: 40px; background-color: #f0f9ff; padding: 20px; border-radius: 8px; border: 1px solid #a8d8f0;">
+            <h3 style="color: #4a6fa5; margin-bottom: 15px;">Weight Progress (kg)</h3>
+            <div style="position: relative; height: 400px; width: 100%;">
+                <canvas id="weightChart"></canvas>
             </div>
         </div>
-    </nav>
-
-    <!-- Main Content Area -->
-    <div class="main-content" id="mainContent">
-        <div class="container mt-4">
-            {% block content %}{% endblock %}
+        
+        <div style="background-color: #fff0f5; padding: 20px; border-radius: 8px; border: 1px solid #ffcce0;">
+            <h3 style="color: #d45d79; margin-bottom: 15px;">Height Progress (cm)</h3>
+            <div style="position: relative; height: 400px; width: 100%;">
+                <canvas id="heightChart"></canvas>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Footer -->
-    <div class="footer">
-        <p>&copy; 2025 AfyaMama. All Rights Reserved.</p>
-        <p>Contact us at <a href="mailto:info@afyamama.com">info@afyamama.com</a></p>
-        <p>Follow us on <a href="https://www.facebook.com/afyamama" target="_blank">Facebook</a> | <a href="https://twitter.com/afyamama" target="_blank">Twitter</a></p>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parse JSON data
+        const months = JSON.parse('{{ months_json|escapejs }}');
+        const weights = JSON.parse('{{ weights_json|escapejs }}');
+        const heights = JSON.parse('{{ heights_json|escapejs }}');
 
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const content = document.getElementById("mainContent");
-            
-            sidebar.classList.toggle("active");
-            content.classList.toggle("content-shift");
-        }
-    </script>
+        // Weight Chart
+        new Chart(
+            document.getElementById('weightChart'),
+            {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Weight (kg)',
+                        data: weights,
+                        borderColor: '#4a6fa5',
+                        backgroundColor: 'rgba(74, 111, 165, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#4a6fa5',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#4a6fa5',
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 14
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            suggestedMin: 2,
+                            suggestedMax: 25,
+                            title: {
+                                display: true,
+                                text: 'Weight (kg)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(74, 111, 165, 0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(74, 111, 165, 0.1)'
+                            }
+                        }
+                    }
+                }
+            }
+        );
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+        // Height Chart
+        new Chart(
+            document.getElementById('heightChart'),
+            {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Height (cm)',
+                        data: heights,
+                        borderColor: '#ff9bb3',
+                        backgroundColor: 'rgba(255, 155, 179, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#ff9bb3',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#ff9bb3',
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 14
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            suggestedMin: 50,
+                            suggestedMax: 150,
+                            title: {
+                                display: true,
+                                text: 'Height (cm)',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 155, 179, 0.1)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Month',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 155, 179, 0.1)'
+                            }
+                        }
+                    }
+                }
+            }
+        );
+    });
+</script>
+{% endblock %}

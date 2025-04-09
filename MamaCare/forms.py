@@ -251,3 +251,66 @@ class ImmunizationForm(forms.ModelForm):
             'yf_eligible': forms.CheckboxInput(),
             'aefi_reported': forms.CheckboxInput(),
         }
+
+
+
+class RecordSearchForm(forms.Form):
+    identification_number = forms.CharField(
+        max_length=20, required=False, label="Mother's ID"
+    )
+    mother_name = forms.CharField(
+        max_length=100, required=False, label="Mother's Name"
+    )
+    child_name = forms.CharField(
+        max_length=100, required=False, label="Child's Name"
+    )
+
+
+
+
+
+from django import forms
+from .models import AntenatalVisit, LabTest, WeightRecord
+
+from django import forms
+from .models import AntenatalVisit, LabTest, WeightRecord, MaternalProfile
+
+class MotherChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f"{obj.identification_number} - {obj.full_name}"  # customize as needed
+
+from django import forms
+from .models import AntenatalVisit, LabTest, WeightRecord
+
+class AntenatalVisitForm(forms.ModelForm):
+    class Meta:
+        model = AntenatalVisit
+        fields = [
+            'visit_date', 'gestation_weeks', 'bp_systolic', 'bp_diastolic',
+            'hb_level', 'fundal_height', 'fetal_presentation', 'next_visit_date',
+            'icd10_code', 'cpt_code'
+        ]
+        widgets = {
+            'visit_date': forms.DateInput(attrs={'type': 'date'}),
+            'next_visit_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+
+class LabTestForm(forms.ModelForm):
+    class Meta:
+        model = LabTest
+        exclude = ['mother']
+
+class WeightRecordForm(forms.ModelForm):
+    class Meta:
+        model = WeightRecord
+        exclude = ['mother']
+
+
+
+from django import forms
+
+class SearchForm(forms.Form):
+    mother_id = forms.CharField(required=False, label='Mother ID', max_length=50)
+    mother_name = forms.CharField(required=False, label='Mother Name', max_length=100)
+    child_name = forms.CharField(required=False, label='Child Name', max_length=100)
